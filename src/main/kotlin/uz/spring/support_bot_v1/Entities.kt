@@ -57,8 +57,8 @@ class TimeTable(
     var endTime: Date?,
     var totalHours: Double?,
     var active: Boolean,
-    @ManyToOne var operator: Users
-) : BaseEntity()
+    @ManyToOne var operator: Users,
+    ) : BaseEntity()
 
 @Entity
 class Languages(
