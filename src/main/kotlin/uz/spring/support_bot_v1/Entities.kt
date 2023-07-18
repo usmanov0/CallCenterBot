@@ -2,7 +2,6 @@ package uz.spring.support_bot_v1
 
 import jakarta.persistence.*
 import org.hibernate.annotations.ColumnDefault
-import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedDate
 import java.util.*
@@ -17,14 +16,14 @@ class BaseEntity(
 
 @Entity(name = "users")
 class Users(
-    var firstName: String,
-    var lastName: String,
-    @Column(length = 50, unique = true) var phone: String,
+    var firstName: String?,
+    var lastName: String?,
+    @Column(length = 50, unique = true) var phone: String?,
     @Column(unique = true) var chatId: Long?,
     var role: String,
-    var isOnline: Boolean,
-    var state: String,
-    var language: MutableList<LanguageEnum>?
+    var isOnline: Boolean?,
+    var state: String?,
+    var language: LanguageEnum?
 ) : BaseEntity()
 
 @Entity
@@ -66,10 +65,7 @@ class OperatorsLanguage(
 
 
 enum class LanguageEnum(
-    /*private var uz: String,
-    private var ru: String,
-*/
-    private var ll: String
+    var ll: String
 ) {
     UZBEK("uz"), ENGLISH("en"), RUSSIAN("ru")
 

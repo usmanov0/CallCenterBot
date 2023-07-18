@@ -1,10 +1,15 @@
 package uz.spring.support_bot_v1
 
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
+import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.TelegramBotsApi
-import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException
+import org.telegram.telegrambots.meta.generics.TelegramBot
+import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
 
 
 @SpringBootApplication
@@ -12,30 +17,26 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 class SupportBotV1Application
 
 
-fun main(args: Array<String>) {
+@Component
+class BotInitializer : CommandLineRunner {
 
-    runApplication<SupportBotV1Application>(*args)
+    @Autowired
+    private lateinit var telegramBot: TgBotController
 
+    override fun run(vararg args: String?) {
+        val botSession = DefaultBotSession()
+        val telegramBotsApi = TelegramBotsApi(botSession::class.java)
+        try {
+            telegramBotsApi.registerBot(telegramBot)
+        } catch (e: TelegramApiException) {
+            e.printStackTrace()
+        }
+    }
 }
 
+fun main(args: Array<String>) {
 
-/*  val botSession = DefaultBotSession()
-  while (true) {
-      val token = token1
-      val telegramBotsApi = TelegramBotsApi(botSession::class.java).registerBot(
-          TgBotController(
-              botService = TgBotService(),
-              token = token
-          )
-      )
 
-      try {
-          botSession.stop()
-          telegramBotsApi.stop()
-          log.info("Starting the bot ...")
-          botSession.start()
-          telegramBotsApi.start()
-      } catch (e: TelegramApiException) {
-          log.error("Telegram API failure", e)
-      }
-  }*/
+    runApplication<SupportBotV1Application>(*args)
+}
+
