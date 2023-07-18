@@ -1,7 +1,10 @@
 package uz.spring.support_bot_v1
 
+import jakarta.persistence.ManyToOne
 import org.springframework.data.annotation.CreatedDate
 import java.util.Date
+
+data class BaseMessage(val code: Int, val message: String?)
 
 data class UserDto(
     val firstName: String?,
@@ -27,3 +30,19 @@ data class OperatorMessageDto(
     val operatorId: Long,
     val messageId: Long
 )
+
+data class TimeTableDto(
+    var startTime: Date,
+    var endTime: Date?,
+    var totalHours: Double?,
+    var active: Boolean,
+    val operatorId: Long?,
+) {
+    companion object {
+        fun toDto(timeTable: TimeTable) : TimeTableDto {
+            return timeTable.run {
+                TimeTableDto(startTime, endTime, totalHours, active, operator.id)
+            }
+        }
+    }
+}
