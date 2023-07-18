@@ -42,18 +42,20 @@ class BaseRepositoryImpl<T : BaseEntity>(
 
 interface UserRepository : BaseRepository<Users> {
     fun findByAccountId(chatId: Long): Users?
+
+    fun existsByIdAndDeletedFalse(id: Long): Boolean
 }
 
-interface ChatRepository : BaseRepository<Chats> {
+interface ChatRepository : BaseRepository<Sessions> {
 
 }
 
 interface MessageRepository : BaseRepository<Messages> {
-//    fun findBy
+
 }
 
 interface TimeRepository : BaseRepository<TimeTable> {
-
+    fun findByOperatorIdAndActiveTrue(operatorId: Long): TimeTable?
 }
 
 interface LanguageRepository : BaseRepository<Languages> {
