@@ -23,7 +23,9 @@ class Users(
     var role: String,
     var isOnline: Boolean?,
     var state: String?,
-    var language: LanguageEnum?
+    @Enumerated(EnumType.STRING)
+    @ElementCollection(targetClass = LanguageEnum::class, fetch = FetchType.EAGER)
+    var language: MutableSet<LanguageEnum>?
 ) : BaseEntity()
 
 @Entity
@@ -64,9 +66,7 @@ class OperatorsLanguage(
 ) : BaseEntity()
 
 
-enum class LanguageEnum(
-    var ll: String
-) {
-    UZBEK("uz"), ENGLISH("en"), RUSSIAN("ru")
+enum class LanguageEnum {
+    Uzbek, English, Russian
 
 }

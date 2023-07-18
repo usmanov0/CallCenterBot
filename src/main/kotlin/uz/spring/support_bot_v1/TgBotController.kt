@@ -18,16 +18,25 @@ class TgBotController(
     }
 
     override fun onUpdateReceived(update: Update) {
+        val message = update.message
         if (update.hasMessage()) {
-            val message = update.message
-            when (message.text) {
-                "/start" -> {
-                    execute(botService.start(message))
-                }
-                UZBEK, ENGLISH, RUSSIAN -> {
-                    execute(botService.chooseLanguage(message))
+            if (update.message.hasContact()) {
+                execute(botService.shareContact(message))
+            } else {
+                when (message.text) {
+                    START -> {
+                        execute(botService.start(message))
+                    }
+                    UZBEK_, ENGLISH_, RUSSIAN_ -> {
+                        execute(botService.chooseLanguage(message))
+                    }
+                    BACK_UZ, BACK_EN, BACK_RU -> {
+                        execute(botService.back(message))
+                    }
                 }
             }
+
+
         }
     }
 }

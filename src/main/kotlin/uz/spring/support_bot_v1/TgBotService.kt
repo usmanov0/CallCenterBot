@@ -1,13 +1,15 @@
 package uz.spring.support_bot_v1
 
+import org.mapdb.serializer.SerializerStringDelta2.ByteArrayKeys
 import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
-import java.util.*
 import kotlin.collections.ArrayList
 
 @Service
@@ -26,7 +28,7 @@ class TgBotService(
                     tgUser.id,
                     USER,
                     true,
-                    SHARE_CONTACT,
+                    CHOOSE_LANGUAGE,
                     null
                 )
             )
@@ -36,7 +38,7 @@ class TgBotService(
         val sendMessage = SendMessage()
         sendMessage.chatId = "${message.chatId}"
         val firstName = message.chat.firstName
-//        sendMessage.replyMarkup = ReplyKeyboardRemove(true)
+        sendMessage.replyMarkup = ReplyKeyboardRemove(true)
 
 
         sendMessage.text =
@@ -56,9 +58,9 @@ class TgBotService(
         val keyboard: MutableList<KeyboardRow> = ArrayList()
         val row = KeyboardRow()
 
-        row.add(UZBEK)
-        row.add(RUSSIAN)
-        row.add(ENGLISH)
+        row.add(UZBEK_)
+        row.add(RUSSIAN_)
+        row.add(ENGLISH_)
 
         keyboard.add(row)
         keyboardMarkup.keyboard = keyboard
@@ -75,56 +77,80 @@ class TgBotService(
         val registerUser = registerUser(message.from)
 
         val language = when (text) {
-            "uzbek" -> LanguageEnum.UZBEK
-            "russian" -> LanguageEnum.RUSSIAN
-            "english" -> LanguageEnum.ENGLISH
-            else -> LanguageEnum.UZBEK
+            UZBEK_ -> LanguageEnum.Uzbek
+            RUSSIAN_ -> LanguageEnum.Russian
+            ENGLISH_ -> LanguageEnum.English
+            else -> LanguageEnum.Uzbek
         }
-        registerUser.language = language
-
+        registerUser.state = SHARE_CONTACT
+        registerUser.language = mutableSetOf(language)
         userRepository.save(registerUser)
-//        messageSource.getMessage(LANGUAGE, arrayOf(String()), Locale.forLanguageTag(registerUser.language.toString()))
-        when (registerUser.language!!.ll) {
-            "uz" -> {
-                sendMessage.text = "Marhamat savol berishinggiz mumkin !"
+
+        val language1 = registerUser.language!!.first()
+
+        when (language1.toString()) {
+            UZBEK -> {
+                sendMessage.text = SHARE_CONTACT_UZ
+
+                val shareContactButton = KeyboardButton()
+                shareContactButton.text = SHARE_UZ
+                shareContactButton.requestContact = true
+
                 val keyboardMarkup = ReplyKeyboardMarkup()
                 val keyboard: MutableList<KeyboardRow> = ArrayList()
                 val row = KeyboardRow()
+                val row1 = KeyboardRow()
 
-                row.add("Savol berish")
-                row.add("Ortga")
+                row.add(shareContactButton)
+                row1.add(BACK_UZ)
 
                 keyboard.add(row)
+                keyboard.add(row1)
                 keyboardMarkup.keyboard = keyboard
                 keyboardMarkup.resizeKeyboard = true
                 sendMessage.replyMarkup = keyboardMarkup
             }
 
-            "ru" -> {
-                sendMessage.text = "Пожалуйста, не стесняйтесь задавать вопросы !"
+            RUSSIAN -> {
+                sendMessage.text = SHARE_CONTACT_RU
+
+                val shareContactButton = KeyboardButton()
+                shareContactButton.text = SHARE_RU
+                shareContactButton.requestContact = true
+
                 val keyboardMarkup = ReplyKeyboardMarkup()
                 val keyboard: MutableList<KeyboardRow> = ArrayList()
-                val row = KeyboardRow()
 
-                row.add("Задайте вопрос")
-                row.add("Назад")
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(shareContactButton)
+                row1.add(BACK_RU)
 
                 keyboard.add(row)
+                keyboard.add(row1)
                 keyboardMarkup.keyboard = keyboard
                 keyboardMarkup.resizeKeyboard = true
                 sendMessage.replyMarkup = keyboardMarkup
             }
 
-            "en" -> {
-                sendMessage.text = "Please feel free to ask a question !"
+            ENGLISH -> {
+                sendMessage.text = SHARE_CONTACT_EN
+
+                val shareContactButton = KeyboardButton()
+                shareContactButton.text = SHARE_EN
+                shareContactButton.requestContact = true
+
                 val keyboardMarkup = ReplyKeyboardMarkup()
                 val keyboard: MutableList<KeyboardRow> = ArrayList()
                 val row = KeyboardRow()
+                val row1 = KeyboardRow()
 
-                row.add("Ask a question")
-                row.add("Back")
+                row.add(shareContactButton)
+                row1.add(BACK_EN)
 
                 keyboard.add(row)
+                keyboard.add(row1)
                 keyboardMarkup.keyboard = keyboard
                 keyboardMarkup.resizeKeyboard = true
                 sendMessage.replyMarkup = keyboardMarkup
@@ -132,6 +158,87 @@ class TgBotService(
         }
         return sendMessage
 
+    }
+
+    fun shareContact(message: Message): SendMessage {
+        val sendMessage = SendMessage()
+        sendMessage.chatId = "${message.chatId}"
+        val text = message.contact.phoneNumber
+        val registerUser = registerUser(message.from)
+
+
+        registerUser.state = QUESTION
+        registerUser.phone = text.toString()
+        userRepository.save(registerUser)
+
+        val language1 = registerUser.language!!.first()
+
+        when (language1.toString()) {
+            UZBEK -> {
+                sendMessage.text = QUESTION_UZ
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_UZ)
+                row1.add(BACK_UZ)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage.replyMarkup = keyboardMarkup
+            }
+
+            RUSSIAN -> {
+                sendMessage.text = QUESTION_RU
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_RU)
+                row1.add(BACK_RU)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage.replyMarkup = keyboardMarkup
+            }
+
+            ENGLISH -> {
+                sendMessage.text = QUESTION_EN
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_EN)
+                row1.add(BACK_EN)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage.replyMarkup = keyboardMarkup
+            }
+        }
+//        sendMessage.replyMarkup = ReplyKeyboardRemove(true)
+        return sendMessage
+
+    }
+
+    fun back(message: Message): SendMessage {
+        val sendMessage = SendMessage()
+        sendMessage.chatId = "${message.chatId}"
+        val registerUser = registerUser(message.from)
+        return when (registerUser.state) {
+            SHARE_CONTACT -> start(message)
+            QUESTION -> chooseLanguage(message)
+            else -> start(message)
+        }
     }
 }
 
