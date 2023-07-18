@@ -56,6 +56,7 @@ class TimeTable(
     var startTime: Date,
     var endTime: Date?,
     var totalHours: Double?,
+    var active: Boolean,
     @ManyToOne var operator: Users
 ) : BaseEntity()
 

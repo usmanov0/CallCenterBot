@@ -23,6 +23,13 @@ interface ChatService {
     fun endSession(sessionId: Long)
 }
 
+interface TimeTableService {
+    fun operatorStart(operatorId: Long)
+    fun findById(timeTableId: Long): TimeTable  //should be dto, not entity
+    fun getAll(pageable: Pageable): Page<TimeTable>
+    fun operatorFinish(operatorId: Long, active: Boolean=true)
+}
+
 class UserServiceImpl(private val userRepository: UserRepository) : UserService {
     override fun create(dto: UserDto) {
         TODO("Not yet implemented")
