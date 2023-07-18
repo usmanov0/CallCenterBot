@@ -41,7 +41,7 @@ class BaseRepositoryImpl<T : BaseEntity>(
 }
 
 interface UserRepository : BaseRepository<Users> {
-    fun findByChatId(chatId: Long): Users?
+    fun findByAccountId(chatId: Long): Users?
 }
 
 interface ChatRepository : BaseRepository<Chats> {
@@ -49,7 +49,7 @@ interface ChatRepository : BaseRepository<Chats> {
 }
 
 interface MessageRepository : BaseRepository<Messages> {
-
+//    fun findBy
 }
 
 interface TimeRepository : BaseRepository<TimeTable> {

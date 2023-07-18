@@ -1,6 +1,10 @@
 server:
   port: 8081
 
+telegram-bot:
+  userName: 'https://t.me/firstGroupSupportBot'
+  token: '6351549076:AAF7uGio6Aan17f4md_yA4fZmj6HjPTbRfg'
+
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -19,5 +23,5 @@ spring:
     hibernate:
       naming:
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
-      ddl-auto: create
+      ddl-auto: update
     show-sql: true

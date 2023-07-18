@@ -43,10 +43,13 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
 //    Telegrambots
-    implementation("org.telegram:telegrambots:6.7.0")
+    implementation("org.telegram:telegrambots-spring-boot-starter:6.7.0")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+
+/*    implementation("org.telegram:telegrambots:6.7.0")
     implementation("org.telegram:telegrambots-abilities:6.7.0")
     implementation("org.telegram:telegrambotsextensions:6.7.0")
-    implementation("org.telegram:telegrambots-meta:6.7.0")
+    implementation("org.telegram:telegrambots-meta:6.7.0")*/
 
 
 
