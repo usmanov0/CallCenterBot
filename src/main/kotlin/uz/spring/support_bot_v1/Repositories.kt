@@ -40,8 +40,8 @@ class BaseRepositoryImpl<T : BaseEntity>(
     override fun trashList(ids: List<Long>): List<T?> = ids.map { trash(it) }
 }
 
-interface UserRepository : BaseRepository<User> {
-    fun findByChatId(chatId: Long)
+interface UserRepository : BaseRepository<Users> {
+    fun findByChatId(chatId: Long): Users?
 }
 
 interface ChatRepository : BaseRepository<MyChat> {
@@ -61,13 +61,5 @@ interface LanguageRepository : BaseRepository<Language> {
 }
 
 interface OperatorsLanguageRepository : BaseRepository<OperatorsLanguage> {
-
-}
-
-interface MarksRepository : BaseRepository<Marks> {
-
-}
-
-interface UserMarksRepository : BaseRepository<UsersMarks> {
 
 }

@@ -17,3 +17,7 @@ const val ENGLISH = "English"
 const val RUSSIAN = "Russian"
 
 const val LANGUAGE = "language"
+
+//   STATES
+const val CHOOSE_LANGUAGE = "CHOOSE_LANGUAGE"
+const val SHARE_CONTACT = "SHARE_CONTACT"

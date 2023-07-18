@@ -2,6 +2,7 @@ package uz.spring.support_bot_v1
 
 import jakarta.persistence.*
 import org.hibernate.annotations.ColumnDefault
+import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedDate
 import java.util.*
@@ -15,14 +16,15 @@ class BaseEntity(
 )
 
 @Entity(name = "users")
-class User(
+class Users(
     var firstName: String,
     var lastName: String,
     @Column(length = 50, unique = true) var phone: String,
     @Column(unique = true) var chatId: Long?,
     var role: String,
     var isOnline: Boolean,
-    var state: String
+    var state: String,
+    var language: MutableList<LanguageEnum>?
 ) : BaseEntity()
 
 @Entity
@@ -30,15 +32,16 @@ class MyChat(
     var chatLanguage: String,
     var startTime: Date,
     var endTime: Date?,
-    @ManyToOne var user: User,
-    @ManyToOne var operator: User
+    var rate: Short?,
+    @ManyToOne var users: Users,
+    @ManyToOne var operator: Users
 ) : BaseEntity()
 
 @Entity
 class MyMessage(
     var type: String,
     var body: String,
-    @ManyToOne var user: User,
+    @ManyToOne var users: Users,
     @ManyToOne var chat: MyChat
 ) : BaseEntity()
 
@@ -47,28 +50,27 @@ class TimeTable(
     var startTime: Date,
     var endTime: Date?,
     var totalHours: Int?,
-    @ManyToOne var operator: User
+    @ManyToOne var operator: Users
 ) : BaseEntity()
 
 @Entity
 class Language(
-    var name: String,
+    var name: LanguageEnum,
 ) : BaseEntity()
 
 @Entity
 class OperatorsLanguage(
     @ManyToOne var languages: Language,
-    @ManyToOne var operator: User
+    @ManyToOne var operator: Users
 ) : BaseEntity()
 
-@Entity
-class Marks(
-    var mark: Int
-) : BaseEntity()
 
-@Entity
-class UsersMarks(
-    @ManyToOne var user: User,
-    @ManyToOne var operator: User,
-    @ManyToOne var marks: Marks
-) : BaseEntity()
+enum class LanguageEnum(
+    /*private var uz: String,
+    private var ru: String,
+*/
+    private var ll: String
+) {
+    UZBEK("uz"), ENGLISH("en"), RUSSIAN("ru")
+
+}

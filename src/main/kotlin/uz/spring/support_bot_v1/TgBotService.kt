@@ -1,14 +1,25 @@
 package uz.spring.support_bot_v1
 
 import org.springframework.context.MessageSource
+import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Message
+import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
 import java.util.*
 import kotlin.collections.ArrayList
 
-class TgBotService(private val messageSource: MessageSource) {
+@Service
+class TgBotService(
+    private val messageSource: MessageSource,
+    private val userRepository: UserRepository,
+) {
+
+    private fun registerUser(tgUser: User): Users {
+        return userRepository.findByChatId(tgUser.id)
+            ?: return userRepository.save(Users(tgUser.firstName, tgUser.lastName, "", tgUser.id, USER, true, SHARE_CONTACT, null))
+    }
 
     fun start(message: Message): SendMessage {
         val sendMessage = SendMessage()
@@ -46,58 +57,61 @@ class TgBotService(private val messageSource: MessageSource) {
         return sendMessage
     }
 
-    fun language(message: Message): SendMessage {
+    fun chooseLanguage(message: Message): SendMessage {
         val sendMessage = SendMessage()
         sendMessage.chatId = "${message.chatId}"
         val text = message.text
+        val registerUser = registerUser(message.from)
+        registerUser.language?.add(LanguageEnum.valueOf(text))
 
-//        messageSource.getMessage(LANGUAGE,String(), Locale.forLanguageTag(language))
-        when (text) {
-            UZBEK -> {
-                sendMessage.text = "Marhamat savol berishinggiz mumkin !"
-                val keyboardMarkup = ReplyKeyboardMarkup()
-                val keyboard: MutableList<KeyboardRow> = ArrayList()
-                val row = KeyboardRow()
-
-                row.add("Savol berish")
-                row.add("Ortga")
-
-                keyboard.add(row)
-                keyboardMarkup.keyboard = keyboard
-                keyboardMarkup.resizeKeyboard = true
-                sendMessage.replyMarkup = keyboardMarkup
-            }
-
-            RUSSIAN -> {
-                sendMessage.text = "Пожалуйста, не стесняйтесь задавать вопросы !"
-                val keyboardMarkup = ReplyKeyboardMarkup()
-                val keyboard: MutableList<KeyboardRow> = ArrayList()
-                val row = KeyboardRow()
-
-                row.add("Задайте вопрос")
-                row.add("Назад")
-
-                keyboard.add(row)
-                keyboardMarkup.keyboard = keyboard
-                keyboardMarkup.resizeKeyboard = true
-                sendMessage.replyMarkup = keyboardMarkup
-            }
-
-            ENGLISH -> {
-                sendMessage.text = "Please feel free to ask a question !"
-                val keyboardMarkup = ReplyKeyboardMarkup()
-                val keyboard: MutableList<KeyboardRow> = ArrayList()
-                val row = KeyboardRow()
-
-                row.add("Ask a question")
-                row.add("Back")
-
-                keyboard.add(row)
-                keyboardMarkup.keyboard = keyboard
-                keyboardMarkup.resizeKeyboard = true
-                sendMessage.replyMarkup = keyboardMarkup
-            }
-        }
+            userRepository.save(registerUser)
+        messageSource.getMessage(LANGUAGE, arrayOf(String()), Locale.forLanguageTag(registerUser.language.toString()))
+//        when (registerUser?.language) {
+//            "uz" -> {
+//                sendMessage.text = "Marhamat savol berishinggiz mumkin !"
+//                val keyboardMarkup = ReplyKeyboardMarkup()
+//                val keyboard: MutableList<KeyboardRow> = ArrayList()
+//                val row = KeyboardRow()
+//
+//                row.add("Savol berish")
+//                row.add("Ortga")
+//
+//                keyboard.add(row)
+//                keyboardMarkup.keyboard = keyboard
+//                keyboardMarkup.resizeKeyboard = true
+//                sendMessage.replyMarkup = keyboardMarkup
+//            }
+//
+//            RUSSIAN -> {
+//                sendMessage.text = "Пожалуйста, не стесняйтесь задавать вопросы !"
+//                val keyboardMarkup = ReplyKeyboardMarkup()
+//                val keyboard: MutableList<KeyboardRow> = ArrayList()
+//                val row = KeyboardRow()
+//
+//                row.add("Задайте вопрос")
+//                row.add("Назад")
+//
+//                keyboard.add(row)
+//                keyboardMarkup.keyboard = keyboard
+//                keyboardMarkup.resizeKeyboard = true
+//                sendMessage.replyMarkup = keyboardMarkup
+//            }
+//
+//            ENGLISH -> {
+//                sendMessage.text = "Please feel free to ask a question !"
+//                val keyboardMarkup = ReplyKeyboardMarkup()
+//                val keyboard: MutableList<KeyboardRow> = ArrayList()
+//                val row = KeyboardRow()
+//
+//                row.add("Ask a question")
+//                row.add("Back")
+//
+//                keyboard.add(row)
+//                keyboardMarkup.keyboard = keyboard
+//                keyboardMarkup.resizeKeyboard = true
+//                sendMessage.replyMarkup = keyboardMarkup
+//            }
+//        }
         return sendMessage
 
     }
