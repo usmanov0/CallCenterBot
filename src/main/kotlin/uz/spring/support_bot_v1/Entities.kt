@@ -29,7 +29,7 @@ class Users(
 ) : BaseEntity()
 
 @Entity
-class Chats(
+class Sessions(
     @ManyToOne var user: Users,
     @ManyToOne var operator: Users,
     var chatLanguage: String,
@@ -47,7 +47,7 @@ class Messages(
     var replied: Boolean,
     var messageLanguage: LanguageEnum,
     @ManyToOne var user: Users,
-    @ManyToOne var chat: Chats,
+    @ManyToOne var session: Sessions,
     @OneToOne var message: Messages?,
 ) : BaseEntity()
 

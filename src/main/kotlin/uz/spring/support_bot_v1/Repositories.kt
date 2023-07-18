@@ -44,7 +44,7 @@ interface UserRepository : BaseRepository<Users> {
     fun findByChatId(chatId: Long): Users?
 }
 
-interface ChatRepository : BaseRepository<Chats> {
+interface ChatRepository : BaseRepository<Sessions> {
 
 }
 
