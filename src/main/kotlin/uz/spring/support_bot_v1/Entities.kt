@@ -16,57 +16,56 @@ class BaseEntity(
 
 @Entity(name = "users")
 class Users(
-    var firstName: String?,
+    var firstName: String,
     var lastName: String?,
     @Column(length = 50, unique = true) var phone: String?,
-    @Column(unique = true) var chatId: Long?,
+    @Column(unique = true) var accountId: Long,
     var role: String,
-    var isOnline: Boolean?,
-    var state: String?,
+    var isOnline: Boolean?,  // for operator not null, for user always null
+    var state: String?,     // for user
     @Enumerated(EnumType.STRING)
     @ElementCollection(targetClass = LanguageEnum::class, fetch = FetchType.EAGER)
     var language: MutableSet<LanguageEnum>?
 ) : BaseEntity()
 
 @Entity
-class MyChat(
+class Chats(
+    @ManyToOne var user: Users,
+    @ManyToOne var operator: Users,
     var chatLanguage: String,
     var startTime: Date,
     var endTime: Date?,
     var rate: Short?,
-    @ManyToOne var users: Users,
-    @ManyToOne var operator: Users
+    var active: Boolean
 ) : BaseEntity()
 
 @Entity
-class MyMessage(
-    var type: String,
+class Messages(
+    @Enumerated(EnumType.STRING)
+    var type: MessageType,
     var body: String,
-    @ManyToOne var users: Users,
-    @ManyToOne var chat: MyChat
+    var replied: Boolean,
+    var messageLanguage: LanguageEnum,
+    @ManyToOne var user: Users,
+    @ManyToOne var chat: Chats,
+    @OneToOne var message: Messages?,
 ) : BaseEntity()
 
 @Entity
 class TimeTable(
     var startTime: Date,
     var endTime: Date?,
-    var totalHours: Int?,
+    var totalHours: Double?,
     @ManyToOne var operator: Users
 ) : BaseEntity()
 
 @Entity
-class Language(
+class Languages(
     var name: LanguageEnum,
 ) : BaseEntity()
 
 @Entity
-class OperatorsLanguage(
-    @ManyToOne var languages: Language,
+class OperatorsLanguages(
+    @ManyToOne var language: Languages,
     @ManyToOne var operator: Users
 ) : BaseEntity()
-
-
-enum class LanguageEnum {
-    Uzbek, English, Russian
-
-}

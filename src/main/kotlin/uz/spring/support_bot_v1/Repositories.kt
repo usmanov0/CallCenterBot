@@ -44,11 +44,11 @@ interface UserRepository : BaseRepository<Users> {
     fun findByChatId(chatId: Long): Users?
 }
 
-interface ChatRepository : BaseRepository<MyChat> {
+interface ChatRepository : BaseRepository<Chats> {
 
 }
 
-interface MessageRepository : BaseRepository<MyMessage> {
+interface MessageRepository : BaseRepository<Messages> {
 
 }
 
@@ -56,10 +56,10 @@ interface TimeRepository : BaseRepository<TimeTable> {
 
 }
 
-interface LanguageRepository : BaseRepository<Language> {
+interface LanguageRepository : BaseRepository<Languages> {
 
 }
 
-interface OperatorsLanguageRepository : BaseRepository<OperatorsLanguage> {
+interface OperatorsLanguageRepository : BaseRepository<OperatorsLanguages> {
 
 }
