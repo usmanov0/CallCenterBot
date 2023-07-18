@@ -4,12 +4,22 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 
 interface UserService {
-    fun create(dto: CreateUserDto)
-    fun findById(id: Long): GetUserDto
-    fun getAll(pageable: Pageable): Page<GetUserDto>
-    fun update(id: Long, dto: UpdateUserDto)
-    fun delete(id: Long)
+    fun create(dto: UserDto)
+    fun findById(id: Long): UserDto
+    fun getAll(pageable: Pageable): Page<UserDto>
 }
 
-class Services {
+class UserServiceImpl(private val userRepository: UserRepository) : UserService {
+    override fun create(dto: UserDto) {
+        TODO("Not yet implemented")
+    }
+
+    override fun findById(id: Long): UserDto {
+        TODO("Not yet implemented")
+    }
+
+    override fun getAll(pageable: Pageable): Page<UserDto> {
+        TODO("Not yet implemented")
+    }
+
 }
