@@ -5,7 +5,6 @@ import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
-import java.time.LocalDateTime
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
@@ -33,12 +32,12 @@ interface SessionService {
     fun endSession(operatorId: Long)
 }
 
-interface LanguageService{
+interface LanguageService {
     fun createLanguage(dto: LanguageDto)
 
     fun updateLanguage(id: Long, dto: LanguageDto)
 
-    fun getAll(pageable: Pageable) : Page<GetOneLanguageDto>
+    fun getAll(pageable: Pageable): Page<GetOneLanguageDto>
 
     fun delete(id: Long)
 
@@ -85,14 +84,14 @@ class MessageServiceImpl(
     override fun operatorWriteMsg(dto: OperatorMessageDto) {
         userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId)?.let {
             dto.run {
-                val message = messageRepository.findByIdAndDeletedFalse(messageId) ?: throw RuntimeException()
+                val message = messageRepository.findByIdAndDeletedFalse(replyMessageId) ?: throw RuntimeException()
                 val user = userRepository.findByChatIdAndDeletedFalse(message.user.chatId)
 
                 val session = sessionRepository.findByUserIdAndActiveTrue(operatorChatId)
                     ?: sessionRepository.save(Sessions(user!!, it, message.messageLanguage, Date(), null, null, true))
 
                 messageRepository.save(toEntity(it, session, message))
-                messageRepository.findByIdAndDeletedFalse(messageId)?.let {
+                messageRepository.findByIdAndDeletedFalse(replyMessageId)?.let {
                     if (it.session == null) it.session = session
                     it.replied = true
                     messageRepository.save(it)
@@ -109,32 +108,35 @@ class MessageServiceImpl(
         messageRepository.findAllNotDeleted(pageable).map { MessageReplyDto.toDto(it) }
 
     override fun getAllMessagesNotRepliedByLanguage(operatorId: Long): List<QuestionsForOperatorDto> {
-        userRepository.findByChatIdAndDeletedFalse(operatorId) ?: throw RuntimeException()
-        val list = operatorsLanguagesRepository.getAllLanguagesByOperatorId(operatorId)
-        var queryConditions = "where replied=false"
+        val user = userRepository.findByChatIdAndDeletedFalse(operatorId) ?: throw RuntimeException()
+        val baseList = mutableListOf<Messages>()
+        val list = operatorsLanguagesRepository.getAllLanguagesByOperatorId(user.id!!)
+        var queryConditions = ""
         var count = 0
         for (lang in list) {
-            count++
-            when (lang.name.toString()) {
-                "Uzbek" -> {
-                    queryConditions = if (count == 1) "$queryConditions and (message_language=Uzbek"
-                    else "$queryConditions or message_language=Uzbek"
-                }
-
-                "Russian" -> {
-                    queryConditions = if (count == 1) "$queryConditions and (message_language=Russian"
-                    else "$queryConditions or message_language=Russian"
-                }
-
-                "English" -> {
-                    queryConditions = if (count == 1) "$queryConditions and (message_language=English"
-                    else "$queryConditions or message_language=English"
-                }
-            }
+            val messageList = messageRepository.getNotRepliedMessagesForOperator(lang.name.toString())
+            baseList.addAll(messageList)
+//            count++
+//            when (lang.name.toString()) {
+//                "Uzbek" -> {
+//                    queryConditions = if (count == 1) queryConditions + "Uzbek"
+//                    else "$queryConditions or message_language=Uzbek"
+//                }
+//
+//                "Russian" -> {
+//                    queryConditions = if (count == 1) queryConditions + "Russian"
+//                    else "$queryConditions or message_language=Russian"
+//                }
+//
+//                "English" -> {
+//                    queryConditions = if (count == 1) queryConditions + "English"
+//                    else "$queryConditions or message_language=English"
+//                }
+//            }
         }
-        queryConditions = "$queryConditions)"
-        return messageRepository.getNotRepliedMessagesForOperator(queryConditions)
-            .map { QuestionsForOperatorDto.toDto(it) }
+//        queryConditions = "$queryConditions)"
+
+        return baseList.map { QuestionsForOperatorDto.toDto(it) }
     }
 
     override fun getAllMessagesBySessionId(sessionId: Long): List<MessageReplyDto> =
@@ -196,28 +198,32 @@ class TimeTableServiceImp(
         timeTable.active = false
         timeRepository.save(timeTable)
     }
+}
 
 @Service
 class LanguageServiceImpl(
     private val languageRepository: LanguageRepository
-):LanguageService {
-    override fun createLanguage(dto: LanguageDto){
+) : LanguageService {
+    override fun createLanguage(dto: LanguageDto) {
         dto.run {
             languageRepository.save(toEntity())
         }
     }
-    override fun updateLanguage(id: Long, dto: LanguageDto) {
 
+    override fun updateLanguage(id: Long, dto: LanguageDto) {
         val language = languageRepository.findByIdAndDeletedFalse(id)
         dto.run {
-            name?.let {
+            name.let {
                 if (language != null) {
                     language.name = it
                 }
             }
         }
     }
-    override fun getAll(pageable: Pageable) = languageRepository.findAllNotDeleted(pageable).map { GetOneLanguageDto.toDto(it) }
+
+    override fun getAll(pageable: Pageable) =
+        languageRepository.findAllNotDeleted(pageable).map { GetOneLanguageDto.toDto(it) }
+
     override fun delete(id: Long) {
         languageRepository.trash(id)
     }

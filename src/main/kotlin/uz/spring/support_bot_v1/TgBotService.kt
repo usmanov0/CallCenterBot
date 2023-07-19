@@ -6,6 +6,7 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
 import org.telegram.telegrambots.meta.bots.AbsSender
@@ -20,11 +21,12 @@ interface CallbackQueryHandler {   // baholash
 
 @Service
 class MessageHandlerImpl(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val messageService: MessageService
 ) : MessageHandler {
 
     private fun registerUser(tgUser: User): Users {
-        return userRepository.findByAccountId(tgUser.id)
+        return userRepository.findByChatIdAndDeletedFalse(tgUser.id)
             ?: return userRepository.save(
                 Users(
                     tgUser.firstName,
@@ -40,6 +42,17 @@ class MessageHandlerImpl(
     }
 
     private fun start(message: Message, sender: AbsSender) {
+        val chatId = message.from.id
+        val user = userRepository.findByChatIdAndDeletedFalse(chatId)
+        if (user == null || user.role == Role.USER) {
+            startUser(message, sender)
+        } else {
+            startOperator(message, sender)
+        }
+
+    }
+
+    private fun startUser(message: Message, sender: AbsSender) {
         val sendMessage = SendMessage()
         sendMessage.chatId = message.chatId.toString()
         val firstName = message.chat.firstName
@@ -63,6 +76,25 @@ class MessageHandlerImpl(
         row.add(UZBEK_)
         row.add(RUSSIAN_)
         row.add(ENGLISH_)
+
+        keyboard.add(row)
+        keyboardMarkup.keyboard = keyboard
+        keyboardMarkup.resizeKeyboard = true
+        sendMessage.replyMarkup = keyboardMarkup
+
+        sender.execute(sendMessage)
+    }
+
+    private fun startOperator(message: Message, sender: AbsSender) {
+        val sendMessage = SendMessage()
+        sendMessage.chatId = message.chatId.toString()
+        sendMessage.text = "Ishni boshlash uchun Online tugmasini bosing !"
+
+        val keyboardMarkup = ReplyKeyboardMarkup()
+        val keyboard: MutableList<KeyboardRow> = ArrayList()
+        val row = KeyboardRow()
+
+        row.add(ONLINE_UZ)
 
         keyboard.add(row)
         keyboardMarkup.keyboard = keyboard
@@ -161,12 +193,179 @@ class MessageHandlerImpl(
         sender.execute(sendMessage)
     }
 
-    private fun back(message: Message,sender: AbsSender) {
+    private fun sendQuestion(message: Message, sender: AbsSender) {
+        val sendMessage = SendMessage()
+        sendMessage.chatId = message.chatId.toString()
+
+        val registerUser = registerUser(message.from)
+
+        registerUser.state = SEND_QUESTION
+
+        userRepository.save(registerUser)
+
+        val language1 = registerUser.language!!.first()  //   [Russian]
+
+        when (language1.toString()) {
+            UZBEK -> {
+                sendMessage.text = SEND_QUESTION_TRUE_UZ
+                sendMessage.replyMarkup = ReplyKeyboardRemove(true)
+
+            }
+
+            RUSSIAN -> {
+                sendMessage.text = SEND_QUESTION_TRUE_RU
+                sendMessage.replyMarkup = ReplyKeyboardRemove(true)
+
+            }
+
+            ENGLISH -> {
+                sendMessage.text = SEND_QUESTION_TRUE_EN
+                sendMessage.replyMarkup = ReplyKeyboardRemove(true)
+
+            }
+        }
+        sender.execute(sendMessage)
+    }
+
+    private fun sendNextQuestions(message: Message, sender: AbsSender) {
+        val sendMessage = SendMessage()
+        sendMessage.chatId = message.from.id.toString()
+        val registerUser = registerUser(message.from)
+
+        registerUser.state = WAITING
+
+        userRepository.save(registerUser)
+
+        val language1 = registerUser.language!!.first()
+
+        when (language1.toString()) {
+            UZBEK -> {
+                sendMessage.text = QUESTION_UZ
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_UZ)
+                row1.add(BACK_UZ)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage.replyMarkup = keyboardMarkup
+            }
+
+            RUSSIAN -> {
+                sendMessage.text = QUESTION_RU
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_RU)
+                row1.add(BACK_RU)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage.replyMarkup = keyboardMarkup
+            }
+
+            ENGLISH -> {
+                sendMessage.text = QUESTION_EN
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_EN)
+                row1.add(BACK_EN)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage.replyMarkup = keyboardMarkup
+            }
+        }
+//        sendMessage.replyMarkup = ReplyKeyboardRemove(true)
+        sender.execute(sendMessage)
+    }
+
+    private fun handleQuestion(message: Message, sender: AbsSender) {
+        val sendMessage = SendMessage()
+        sendMessage.chatId = message.chatId.toString()
+
+        val registerUser = registerUser(message.from)
+
+        registerUser.state = WAITING  //CHANGE
+
+        userRepository.save(registerUser)
+
+        val language1 = registerUser.language!!.first()  //   [Russian]
+
+        when (language1.toString()) {
+            UZBEK -> {
+                messageService.userWriteMsg(
+                    UserMessageDto(
+                        message.text,
+                        registerUser.chatId,
+                        registerUser.language!!.first().name
+                    )
+                )
+                sendMessage.text = SENDING_OPERATOR_UZ
+            }
+
+            RUSSIAN -> {
+                messageService.userWriteMsg(
+                    UserMessageDto(
+                        message.text,
+                        registerUser.chatId,
+                        registerUser.language!!.first().name
+                    )
+                )
+                sendMessage.text = SENDING_OPERATOR_RU
+            }
+
+            ENGLISH -> {
+                messageService.userWriteMsg(
+                    UserMessageDto(
+                        message.text,
+                        registerUser.chatId,
+                        registerUser.language!!.first().name
+                    )
+                )
+                sendMessage.text = SENDING_OPERATOR_EN
+            }
+        }
+        sender.execute(sendMessage)
+        sendNextQuestions(message, sender)
+    }
+
+    private fun getQuestions(message: Message, sender: AbsSender) {
+        val sendMessage = SendMessage()
+        sendMessage.chatId = message.from.id.toString()
+
+        val registerUser = registerUser(message.from)
+//
+//        registerUser.state = WAITING  //CHANGE
+//
+//        userRepository.save(registerUser)
+        val dtoList = messageService.getAllMessagesNotRepliedByLanguage(message.from.id)
+        for (dto in dtoList) {
+            sendMessage.text = dto.body
+            sender.execute(sendMessage)
+        }
+    }
+
+    private fun back(message: Message, sender: AbsSender) {
         val registerUser = registerUser(message.from)
         return when (registerUser.state) {
-            SHARE_CONTACT -> start(message,sender)
-            QUESTION -> chooseLanguage(message,sender)
-            else -> start(message,sender)
+            SHARE_CONTACT -> start(message, sender)
+            QUESTION -> chooseLanguage(message, sender)
+            else -> start(message, sender)
         }
     }
 
@@ -187,10 +386,18 @@ class MessageHandlerImpl(
 
                 BACK_UZ, BACK_RU, BACK_EN -> back(message, sender)
 
-                else -> {
+                SEND_QUESTION_EN, SEND_QUESTION_RU, SEND_QUESTION_UZ -> sendQuestion(message, sender)
 
+                ONLINE_UZ, ONLINE_RU, ONLINE_EN -> getQuestions(message, sender)
+
+                else -> {
+                    val registerUser = registerUser(message.from)
+                    if (registerUser.state == SEND_QUESTION) {
+                        handleQuestion(message, sender)
+                    }
                 }
             }
+
         } else if (message.hasContact()) {
 
             val phone = message.contact.phoneNumber
@@ -254,7 +461,6 @@ class MessageHandlerImpl(
                     sendMessage.replyMarkup = keyboardMarkup
                 }
             }
-//        sendMessage.replyMarkup = ReplyKeyboardRemove(true)
             sender.execute(sendMessage)
         }
 

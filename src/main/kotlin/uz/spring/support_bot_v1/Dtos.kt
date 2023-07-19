@@ -1,6 +1,5 @@
 package uz.spring.support_bot_v1
 
-import org.telegram.telegrambots.meta.api.objects.User
 import java.util.Date
 
 data class BaseMessage(val code: Int, val message: String?)
@@ -29,18 +28,18 @@ data class UserDto(
             return user.run { UserDto(firstName, lastName, chatId, phone, language.toString()) }
         }
 
-       /* fun registerUser(tgUser: User) = tgUser.run {
-            Users(
-                firstName,
-                lastName,
-                null,
-                id,
-                Role.USER,
-                null,
-                CHOOSE_LANGUAGE,
-                null
-            )
-        }*/
+        /* fun registerUser(tgUser: User) = tgUser.run {
+             Users(
+                 firstName,
+                 lastName,
+                 null,
+                 id,
+                 Role.USER,
+                 null,
+                 CHOOSE_LANGUAGE,
+                 null
+             )
+         }*/
     }
 }
 
@@ -60,16 +59,16 @@ data class UserMessageDto(
     val userLanguage: String
 ) {
     fun toEntity(user: Users, session: Sessions?) =
-        Messages(MessageType.QUESTION, body, false, LanguageEnum.valueOf(userLanguage), user, session, null)
+        Messages(MessageType.QUESTION, body, false, null, LanguageEnum.valueOf(userLanguage), user, session)
 }
 
 data class OperatorMessageDto(
     val body: String,
     val operatorChatId: Long,
-    val messageId: Long
+    val replyMessageId: Long
 ) {
     fun toEntity(operator: Users, session: Sessions, message: Messages) =
-        Messages(MessageType.ANSWER, body, null, message.messageLanguage, operator, session, message)
+        Messages(MessageType.ANSWER, body, null, replyMessageId, message.messageLanguage, operator, session)
 }
 
 data class QuestionsForOperatorDto(
@@ -100,8 +99,8 @@ data class TimeTableDto(
 
 data class LanguageDto(
     val name: LanguageEnum
-){
-    fun toEntity()  = Languages(name)
+) {
+    fun toEntity() = Languages(name)
 }
 
 data class LanguageUpdateDto(
@@ -110,10 +109,10 @@ data class LanguageUpdateDto(
 
 
 data class GetOneLanguageDto(
-    val  name: LanguageEnum
-){
-    companion object{
-        fun toDto(language: Languages):  GetOneLanguageDto{
+    val name: LanguageEnum
+) {
+    companion object {
+        fun toDto(language: Languages): GetOneLanguageDto {
             return language.run {
                 GetOneLanguageDto(name)
             }

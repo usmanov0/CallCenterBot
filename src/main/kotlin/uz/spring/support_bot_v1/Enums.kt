@@ -19,3 +19,6 @@ enum class ErrorCode(val code: Int) {
     MESSAGE_NOT_FOUND(103),
     USER_ALREADY_EXISTS(104)
 }
+enum class OperatorState(){
+    BUSY,NOT_BUSY
+}

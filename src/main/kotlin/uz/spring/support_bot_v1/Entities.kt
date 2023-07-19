@@ -20,11 +20,11 @@ class Users(
     var lastName: String?,
     @Column(length = 50, unique = true) var phone: String?,
     @Column(unique = true) var chatId: Long,
+    @Enumerated(EnumType.STRING)
     var role: Role,
     var isOnline: Boolean?,  // for operator not null, for user always null
     var state: String?,     // for user
     @Enumerated(EnumType.STRING)
-    @ElementCollection(targetClass = LanguageEnum::class, fetch = FetchType.EAGER)
     var language: MutableSet<LanguageEnum>?
 ) : BaseEntity()
 
@@ -45,10 +45,13 @@ class Messages(
     var type: MessageType,
     var body: String,
     var replied: Boolean?,
+    var replyMessageId: Long?,
+    @Enumerated(EnumType.STRING)
     var messageLanguage: LanguageEnum,
-    @ManyToOne var user: Users,
-    @ManyToOne var session: Sessions?,
-    @OneToOne var message: Messages?,
+    @ManyToOne
+    var user: Users,
+    @ManyToOne
+    var session: Sessions?,
 ) : BaseEntity()
 
 @Entity
@@ -58,10 +61,11 @@ class TimeTable(
     var totalHours: Double?,
     var active: Boolean,
     @ManyToOne var operator: Users,
-    ) : BaseEntity()
+) : BaseEntity()
 
 @Entity
 class Languages(
+    @Enumerated(value = EnumType.STRING)
     var name: LanguageEnum,
 ) : BaseEntity()
 

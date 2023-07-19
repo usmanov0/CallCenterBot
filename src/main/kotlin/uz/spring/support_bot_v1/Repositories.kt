@@ -53,7 +53,7 @@ interface SessionRepository : BaseRepository<Sessions> {
 }
 
 interface MessageRepository : BaseRepository<Messages> {
-    @Query(value = "select * from messages ?1", nativeQuery = true)
+    @Query(value = "select * from messages where replied=false and (message_language=?1)", nativeQuery = true)
     fun getNotRepliedMessagesForOperator(conditions: String): List<Messages>
 
     fun findAllBySessionId(sessionId: Long): List<Messages>
@@ -68,7 +68,7 @@ interface LanguageRepository : BaseRepository<Languages> {
 }
 
 interface OperatorsLanguagesRepository : BaseRepository<OperatorsLanguages> {
-    @Query(value = "select l from OperatorsLanguages as ol join Languages as l on ol.operator.id=l.id " +
+    @Query(value = "select l from OperatorsLanguages as ol join Languages as l on ol.language.id=l.id " +
                 "where ol.operator.id=?1")
     fun getAllLanguagesByOperatorId(operatorId: Long): List<Languages>
 }

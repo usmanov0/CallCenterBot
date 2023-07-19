@@ -28,11 +28,13 @@ const val LANGUAGE = "language"
 const val CHOOSE_LANGUAGE = "CHOOSE_LANGUAGE"
 const val SHARE_CONTACT = "SHARE_CONTACT"
 const val QUESTION = "QUESTION"
+const val SEND_QUESTION = "SEND_QUESTION"
+const val WAITING = "WAITING"
 
 
-const val QUESTION_UZ = "Marhamat savol berishinggiz mumkin !"
-const val QUESTION_RU = "Пожалуйста, не стесняйтесь задавать вопросы !"
-const val QUESTION_EN = "Please feel free to ask a question !"
+const val QUESTION_UZ = "Marhamat savolinggiz bo'lsa Savol berish tugmasini bosing !"
+const val QUESTION_RU = "Если у вас есть какие-либо вопросы, пожалуйста, нажмите кнопку Задать вопрос!"
+const val QUESTION_EN = "If you have any questions, please click the Ask a Question button!"
 
 const val SEND_QUESTION_UZ = "Savol berish"
 const val SEND_QUESTION_RU = "Задайте вопрос"
@@ -42,6 +44,14 @@ const val SHARE_CONTACT_UZ = "Marhamat telefoningizni yuboring !"
 const val SHARE_CONTACT_RU = "Поделиться контактом !"
 const val SHARE_CONTACT_EN = "Please send your phone number !"
 
+const val SEND_QUESTION_TRUE_UZ = "Savolingizni bering !"
+const val SEND_QUESTION_TRUE_RU = "Задавай вопрос !"
+const val SEND_QUESTION_TRUE_EN = "Send question !"
+
+const val SENDING_OPERATOR_UZ = "Savolingiz  yuborildi,operator javobini kuting !"
+const val SENDING_OPERATOR_RU = "Ваш вопрос отправлен, ждите ответа оператора !"
+const val SENDING_OPERATOR_EN = "Your question has been sent, wait for the operator's response !"
+
 const val SHARE_UZ = "\uD83D\uDCDE Kontaktimni yuborish"
 const val SHARE_RU = "\uD83D\uDCDE Поделиться контактом";
 const val SHARE_EN = "\uD83D\uDCDE Share Contact";
@@ -49,3 +59,7 @@ const val SHARE_EN = "\uD83D\uDCDE Share Contact";
 const val BACK_UZ = "⬅️ Ortga"
 const val BACK_RU = "⬅️ Назад"
 const val BACK_EN = "⬅️ Back"
+
+const val ONLINE_UZ = "ONLINE"
+const val ONLINE_RU = "ONLINE"
+const val ONLINE_EN = "ONLINE"
