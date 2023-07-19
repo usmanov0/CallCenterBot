@@ -64,7 +64,7 @@ interface TimeRepository : BaseRepository<TimeTable> {
 }
 
 interface LanguageRepository : BaseRepository<Languages> {
-
+    fun findByName(name: String)
 }
 
 interface OperatorsLanguagesRepository : BaseRepository<OperatorsLanguages> {

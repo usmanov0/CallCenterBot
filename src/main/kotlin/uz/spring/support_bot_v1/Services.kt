@@ -33,6 +33,17 @@ interface SessionService {
     fun endSession(operatorId: Long)
 }
 
+interface LanguageService{
+    fun createLanguage(dto: LanguageDto)
+
+    fun updateLanguage(id: Long, dto: LanguageDto)
+
+    fun getAll(pageable: Pageable) : Page<GetOneLanguageDto>
+
+    fun delete(id: Long)
+
+}
+
 interface TimeTableService {
     fun operatorStart(operatorId: Long)
     fun findById(timeTableId: Long): TimeTableDto
@@ -186,5 +197,28 @@ class TimeTableServiceImp(
         timeRepository.save(timeTable)
     }
 
+@Service
+class LanguageServiceImpl(
+    private val languageRepository: LanguageRepository
+):LanguageService {
+    override fun createLanguage(dto: LanguageDto){
+        dto.run {
+            languageRepository.save(toEntity())
+        }
+    }
+    override fun updateLanguage(id: Long, dto: LanguageDto) {
 
+        val language = languageRepository.findByIdAndDeletedFalse(id)
+        dto.run {
+            name?.let {
+                if (language != null) {
+                    language.name = it
+                }
+            }
+        }
+    }
+    override fun getAll(pageable: Pageable) = languageRepository.findAllNotDeleted(pageable).map { GetOneLanguageDto.toDto(it) }
+    override fun delete(id: Long) {
+        languageRepository.trash(id)
+    }
 }

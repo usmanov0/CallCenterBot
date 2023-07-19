@@ -97,3 +97,26 @@ data class TimeTableDto(
         }
     }
 }
+
+data class LanguageDto(
+    val name: LanguageEnum
+){
+    fun toEntity()  = Languages(name)
+}
+
+data class LanguageUpdateDto(
+    val name: String
+)
+
+
+data class GetOneLanguageDto(
+    val  name: LanguageEnum
+){
+    companion object{
+        fun toDto(language: Languages):  GetOneLanguageDto{
+            return language.run {
+                GetOneLanguageDto(name)
+            }
+        }
+    }
+}
