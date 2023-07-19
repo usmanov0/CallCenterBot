@@ -99,6 +99,7 @@ class LanguageServiceImpl(
         }
     }
     override fun updateLanguage(id: Long, dto: LanguageDto) {
+
         val language = languageRepository.findByIdAndDeletedFalse(id)
         dto.run {
             name?.let {
