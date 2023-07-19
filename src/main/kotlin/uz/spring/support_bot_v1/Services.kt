@@ -27,6 +27,17 @@ interface ChatService {
     fun endSession(sessionId: Long)
 }
 
+interface LanguageService{
+    fun createLanguage(dto: LanguageDto)
+
+    fun updateLanguage(id: Long, dto: LanguageDto)
+
+    fun getAll(pageable: Pageable) : Page<GetOneLanguageDto>
+
+    fun delete(id: Long)
+
+}
+
 interface TimeTableService {
     fun operatorStart(operatorId: Long)
     fun findById(timeTableId: Long): TimeTableDto
@@ -36,7 +47,6 @@ interface TimeTableService {
 
 class UserServiceImpl(private val userRepository: UserRepository) : UserService {
     override fun create(dto: UserDto) {
-        TODO("Not yet implemented")
     }
 
     override fun findById(id: Long): UserDto {
@@ -77,6 +87,29 @@ class TimeTableServiceImp(
         timeTable.active = false
         timeRepository.save(timeTable)
     }
+}
 
-
+@Service
+class LanguageServiceImpl(
+    private val languageRepository: LanguageRepository
+):LanguageService {
+    override fun createLanguage(dto: LanguageDto){
+        dto.run {
+            languageRepository.save(toEntity())
+        }
+    }
+    override fun updateLanguage(id: Long, dto: LanguageDto) {
+        val language = languageRepository.findByIdAndDeletedFalse(id)
+        dto.run {
+            name?.let {
+                if (language != null) {
+                    language.name = it
+                }
+            }
+        }
+    }
+    override fun getAll(pageable: Pageable) = languageRepository.findAllNotDeleted(pageable).map { GetOneLanguageDto.toDto(it) }
+    override fun delete(id: Long) {
+        languageRepository.trash(id)
+    }
 }
