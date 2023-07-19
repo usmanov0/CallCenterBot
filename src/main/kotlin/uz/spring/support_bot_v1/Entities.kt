@@ -16,16 +16,16 @@ class BaseEntity(
 
 @Entity(name = "users")
 class Users(
-    var firstName: String,
-    var lastName: String?,
     @Column(length = 50, unique = true) var phone: String?,
     @Column(unique = true) var chatId: Long,
+    @Enumerated(EnumType.STRING) var role: Role,
+    @Enumerated(EnumType.STRING) var operatorState: OperatorState?,
     @Enumerated(EnumType.STRING)
-    var role: Role,
-    var isOnline: Boolean?,  // for operator not null, for user always null
-    var state: String?,     // for user
-    @Enumerated(EnumType.STRING)
-    var language: MutableSet<LanguageEnum>?
+    var language: MutableSet<LanguageEnum>?,
+    var isOnline: Boolean?,
+   // var state: String?,
+    var lastName: String?,
+    var firstName: String
 ) : BaseEntity()
 
 @Entity

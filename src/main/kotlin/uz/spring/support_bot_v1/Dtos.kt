@@ -1,5 +1,8 @@
 package uz.spring.support_bot_v1
 
+import jakarta.persistence.Column
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import java.util.Date
 
 data class BaseMessage(val code: Int, val message: String?)
@@ -13,14 +16,14 @@ data class UserDto(
 ) {
     fun toEntity() =
         Users(
-            firstName,
-            lastName,
             phone,
             chatId,
             Role.USER,
             null,
-            CHOOSE_LANGUAGE,
-            mutableSetOf(LanguageEnum.valueOf(language))
+            mutableSetOf(LanguageEnum.valueOf(language)),
+            true,
+            lastName,
+            firstName
         )
 
     companion object {
@@ -114,9 +117,9 @@ data class TimeTableDto(
 }
 
 data class LanguageDto(
-    val name: LanguageEnum
+    val name: String
 ) {
-    fun toEntity() = Languages(name)
+    fun toEntity() = Languages(LanguageEnum.valueOf(name))
 }
 
 data class LanguageUpdateDto(
@@ -135,3 +138,29 @@ data class GetOneLanguageDto(
         }
     }
 }
+
+data class GetOneOperatorDto    (
+    val id: Long?,
+    val phone: String?,
+    val chatId: Long,
+    val operatorState: String,
+    var role: String,
+    var language: MutableSet<LanguageEnum>?,
+    var isOnline: Boolean?,
+    var lastName: String?,
+    var firstName: String
+){
+
+    companion object {
+        fun toDo(operator: Users) : GetOneOperatorDto{
+            return operator.run {
+                GetOneOperatorDto(id, phone, chatId, role.name, operatorState!!.name, language, isOnline, lastName, firstName)
+            }
+        }
+    }
+}
+
+data class OperatorLanguageDto(
+    val operatorChatId: Long,
+    val languageId: Long
+)

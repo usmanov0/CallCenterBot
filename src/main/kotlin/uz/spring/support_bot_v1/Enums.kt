@@ -17,6 +17,7 @@ enum class ErrorCode(val code: Int) {
     TIME_TABLE_NOT_FOUND(101),
     USER_NOT_FOUND(102),
     MESSAGE_NOT_FOUND(103),
+    LANGUAGE_NOT_FOUND(103),
     USER_ALREADY_EXISTS(104)
 }
 enum class OperatorState(){
