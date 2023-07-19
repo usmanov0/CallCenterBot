@@ -8,6 +8,10 @@ enum class MessageType {
     QUESTION, ANSWER
 }
 
+enum class Role {
+    USER, OPERATOR
+}
+
 enum class ErrorCode(val code: Int) {
     OPERATOR_NOT_FOUND(100),
     TIME_TABLE_NOT_FOUND(101)

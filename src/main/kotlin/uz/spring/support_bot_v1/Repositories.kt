@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+import org.springframework.data.jpa.repository.Query
 import org.springframework.data.jpa.repository.support.JpaEntityInformation
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository
 import org.springframework.data.repository.NoRepositoryBean
@@ -41,17 +42,21 @@ class BaseRepositoryImpl<T : BaseEntity>(
 }
 
 interface UserRepository : BaseRepository<Users> {
+    fun findByChatIdAndDeletedFalse(chatId: Long): Users?
     fun findByAccountId(chatId: Long): Users?
 
     fun existsByIdAndDeletedFalse(id: Long): Boolean
 }
 
-interface ChatRepository : BaseRepository<Sessions> {
-
+interface SessionRepository : BaseRepository<Sessions> {
+    fun findByUserIdAndActiveTrue(userId: Long): Sessions?
 }
 
 interface MessageRepository : BaseRepository<Messages> {
+    @Query(value = "select * from messages ?1", nativeQuery = true)
+    fun getNotRepliedMessagesForOperator(conditions: String): List<Messages>
 
+    fun findAllBySessionId(sessionId: Long): List<Messages>
 }
 
 interface TimeRepository : BaseRepository<TimeTable> {
@@ -62,6 +67,8 @@ interface LanguageRepository : BaseRepository<Languages> {
 
 }
 
-interface OperatorsLanguageRepository : BaseRepository<OperatorsLanguages> {
-
+interface OperatorsLanguagesRepository : BaseRepository<OperatorsLanguages> {
+    @Query(value = "select l from OperatorsLanguages as ol join Languages as l on ol.operator.id=l.id " +
+                "where ol.operator.id=?1")
+    fun getAllLanguagesByOperatorId(operatorId: Long): List<Languages>
 }

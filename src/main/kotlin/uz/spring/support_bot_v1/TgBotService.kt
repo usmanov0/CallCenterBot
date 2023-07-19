@@ -30,7 +30,7 @@ class MessageHandlerImpl(
                     tgUser.lastName,
                     "",
                     tgUser.id,
-                    USER,
+                    Role.USER,
                     true,
                     CHOOSE_LANGUAGE,
                     null

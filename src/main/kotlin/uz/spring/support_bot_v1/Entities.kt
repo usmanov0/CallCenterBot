@@ -19,8 +19,8 @@ class Users(
     var firstName: String,
     var lastName: String?,
     @Column(length = 50, unique = true) var phone: String?,
-    @Column(unique = true) var accountId: Long,
-    var role: String,
+    @Column(unique = true) var chatId: Long,
+    var role: Role,
     var isOnline: Boolean?,  // for operator not null, for user always null
     var state: String?,     // for user
     @Enumerated(EnumType.STRING)
@@ -32,7 +32,7 @@ class Users(
 class Sessions(
     @ManyToOne var user: Users,
     @ManyToOne var operator: Users,
-    var chatLanguage: String,
+    var chatLanguage: LanguageEnum,
     var startTime: Date,
     var endTime: Date?,
     var rate: Short?,
@@ -44,10 +44,10 @@ class Messages(
     @Enumerated(EnumType.STRING)
     var type: MessageType,
     var body: String,
-    var replied: Boolean,
+    var replied: Boolean?,
     var messageLanguage: LanguageEnum,
     @ManyToOne var user: Users,
-    @ManyToOne var session: Sessions,
+    @ManyToOne var session: Sessions?,
     @OneToOne var message: Messages?,
 ) : BaseEntity()
 
