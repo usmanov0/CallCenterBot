@@ -14,5 +14,8 @@ enum class Role {
 
 enum class ErrorCode(val code: Int) {
     OPERATOR_NOT_FOUND(100),
-    TIME_TABLE_NOT_FOUND(101)
+    TIME_TABLE_NOT_FOUND(101),
+    USER_NOT_FOUND(102),
+    MESSAGE_NOT_FOUND(103),
+    USER_ALREADY_EXISTS(104)
 }

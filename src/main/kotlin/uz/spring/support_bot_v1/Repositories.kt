@@ -43,7 +43,7 @@ class BaseRepositoryImpl<T : BaseEntity>(
 
 interface UserRepository : BaseRepository<Users> {
     fun findByChatIdAndDeletedFalse(chatId: Long): Users?
-    fun findByAccountId(chatId: Long): Users?
+//    fun findByAccountId(chatId: Long): Users?
 
     fun existsByIdAndDeletedFalse(id: Long): Boolean
 }

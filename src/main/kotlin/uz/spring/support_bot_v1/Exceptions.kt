@@ -5,6 +5,19 @@ sealed class DemoException(message: String? = null): RuntimeException(message) {
     fun getErrorMessage(): BaseMessage = BaseMessage(errorType().code, message)
 }
 
+
+class UserNotFoundException(val id: Long) : DemoException() {
+    override fun errorType() = ErrorCode.USER_NOT_FOUND
+}
+class UserAlreadyExistsException(val id: Long) : DemoException() {
+    override fun errorType() = ErrorCode.USER_NOT_FOUND
+}
+
+class MessageNotFoundException(val id: Long) : DemoException() {
+    override fun errorType() = ErrorCode.MESSAGE_NOT_FOUND
+}
+
+
 class OperatorNotFoundException(val id: Long) : DemoException(ErrorCode.OPERATOR_NOT_FOUND.name) {
     override fun errorType() = ErrorCode.OPERATOR_NOT_FOUND
 }

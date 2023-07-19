@@ -1,6 +1,9 @@
 package uz.spring.support_bot_v1
 
+import org.telegram.telegrambots.meta.api.objects.User
 import java.util.Date
+
+data class BaseMessage(val code: Int, val message: String?)
 
 data class UserDto(
     val firstName: String,
@@ -17,7 +20,7 @@ data class UserDto(
             chatId,
             Role.USER,
             null,
-            "waiting for operator",
+            CHOOSE_LANGUAGE,
             mutableSetOf(LanguageEnum.valueOf(language))
         )
 
@@ -25,6 +28,19 @@ data class UserDto(
         fun toDto(user: Users): UserDto {
             return user.run { UserDto(firstName, lastName, chatId, phone, language.toString()) }
         }
+
+       /* fun registerUser(tgUser: User) = tgUser.run {
+            Users(
+                firstName,
+                lastName,
+                null,
+                id,
+                Role.USER,
+                null,
+                CHOOSE_LANGUAGE,
+                null
+            )
+        }*/
     }
 }
 

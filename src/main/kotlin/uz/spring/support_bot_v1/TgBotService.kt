@@ -14,7 +14,7 @@ interface MessageHandler {
     fun handle(message: Message, sender: AbsSender)
 }
 
-interface CallbackQueryHandler {
+interface CallbackQueryHandler {   // baholash
     fun handle(callbackQuery: CallbackQuery, sender: AbsSender)
 }
 
@@ -22,13 +22,14 @@ interface CallbackQueryHandler {
 class MessageHandlerImpl(
     private val userRepository: UserRepository
 ) : MessageHandler {
+
     private fun registerUser(tgUser: User): Users {
         return userRepository.findByAccountId(tgUser.id)
             ?: return userRepository.save(
                 Users(
                     tgUser.firstName,
                     tgUser.lastName,
-                    "",
+                    null,
                     tgUser.id,
                     Role.USER,
                     true,
@@ -87,7 +88,7 @@ class MessageHandlerImpl(
         registerUser.language = mutableSetOf(language)
         userRepository.save(registerUser)
 
-        val language1 = registerUser.language!!.first()
+        val language1 = registerUser.language!!.first()  //   [Russian]
 
         when (language1.toString()) {
             UZBEK -> {
@@ -170,16 +171,16 @@ class MessageHandlerImpl(
     }
 
     override fun handle(message: Message, sender: AbsSender) {
-        val text = message.text
         val telegramUser = message.from
         val chatId = telegramUser.id.toString()
 
-        val sendMessage = SendMessage()
+        val sendMessage = SendMessage()   // chatId  text
         sendMessage.enableHtml(true)
         sendMessage.chatId = chatId
 
+
         if (message.hasText()) {
-            when (text) {
+            when (message.text) {
                 START -> start(message, sender)
 
                 UZBEK_, RUSSIAN_, ENGLISH_ -> chooseLanguage(message, sender)

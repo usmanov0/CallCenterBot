@@ -5,10 +5,12 @@ import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 import java.util.Date
+import java.util.concurrent.TimeUnit
 
 interface UserService {
-    fun create(dto: UserDto)
+    //    fun create(tgUser: ):UserDto
     fun findById(id: Long): UserDto
     fun getAll(pageable: Pageable): Page<UserDto>
 }
@@ -20,13 +22,13 @@ interface MessageService {
     fun getAll(pageable: Pageable): Page<MessageReplyDto>
     fun getAllMessagesNotRepliedByLanguage(operatorId: Long): List<QuestionsForOperatorDto>
     fun getAllMessagesBySessionId(sessionId: Long): List<MessageReplyDto>
-    fun deliverMessage(userId: Long)
+    fun deliverMessage(userId: Long, messageId: Long): MessageReplyDto
 }
 
 interface SessionService {
     //The following methods are implemented in userWriteMsg and operatorWriteMsg methods
 
-//    fun createChatId(userId: Long, operatorId: Long, chatLanguage: LanguageEnum): Long
+    //    fun createChatId(userId: Long, operatorId: Long, chatLanguage: LanguageEnum): Long
 //    fun getActiveChatByUserId(userId: Long, active: Boolean = true): Long     //returns sessionId
     fun endSession(operatorId: Long)
 }
@@ -40,13 +42,13 @@ interface TimeTableService {
 
 @Service
 class UserServiceImpl(private val userRepository: UserRepository) : UserService {
-    override fun create(dto: UserDto) {
-        if (userRepository.findByChatIdAndDeletedFalse(dto.chatId) != null) throw RuntimeException()
-        dto.run { userRepository.save(toEntity()) }
-    }
+    /*   override fun create(dto: UserDto):UserDto {
+           if (userRepository.findByChatIdAndDeletedFalse(dto.chatId) != null) throw UserAlreadyExistsException(dto.chatId)
+           dto.run { userRepository.save(toEntity()) }
+       }*/
 
     override fun findById(id: Long) = userRepository.findByChatIdAndDeletedFalse(id)?.let { UserDto.toDto(it) }
-        ?: throw RuntimeException()
+        ?: throw UserNotFoundException(id)
 
     override fun getAll(pageable: Pageable): Page<UserDto> =
         userRepository.findAllNotDeleted(pageable).map { UserDto.toDto(it) }
@@ -102,15 +104,17 @@ class MessageServiceImpl(
         var count = 0
         for (lang in list) {
             count++
-            when(lang.name.toString()) {
+            when (lang.name.toString()) {
                 "Uzbek" -> {
                     queryConditions = if (count == 1) "$queryConditions and (message_language=Uzbek"
                     else "$queryConditions or message_language=Uzbek"
                 }
+
                 "Russian" -> {
                     queryConditions = if (count == 1) "$queryConditions and (message_language=Russian"
                     else "$queryConditions or message_language=Russian"
                 }
+
                 "English" -> {
                     queryConditions = if (count == 1) "$queryConditions and (message_language=English"
                     else "$queryConditions or message_language=English"
@@ -118,14 +122,17 @@ class MessageServiceImpl(
             }
         }
         queryConditions = "$queryConditions)"
-        return messageRepository.getNotRepliedMessagesForOperator(queryConditions).map { QuestionsForOperatorDto.toDto(it) }
+        return messageRepository.getNotRepliedMessagesForOperator(queryConditions)
+            .map { QuestionsForOperatorDto.toDto(it) }
     }
 
     override fun getAllMessagesBySessionId(sessionId: Long): List<MessageReplyDto> =
         messageRepository.findAllBySessionId(sessionId).map { MessageReplyDto.toDto(it) }
 
-    override fun deliverMessage(userId: Long) {
-        TODO("Not yet implemented")
+    override fun deliverMessage(userId: Long, messageId: Long): MessageReplyDto {
+        userRepository.findByChatIdAndDeletedFalse(userId) ?: throw UserNotFoundException(userId)
+        return messageRepository.findByIdAndDeletedFalse(messageId)?.run { MessageReplyDto(body, createdDate!!) }
+            ?: throw MessageNotFoundException(messageId)
     }
 
 }
@@ -166,7 +173,15 @@ class TimeTableServiceImp(
         val timeTable =
             timeRepository.findByOperatorIdAndActiveTrue(operatorId) ?: throw TimeTableNotFoundException(operatorId)
         timeTable.endTime = Date()
-        (timeTable.endTime!!.hours - timeTable.startTime.hours).also { timeTable.totalHours = it.toDouble() }
+        val time = timeTable.endTime!!.time - timeTable.startTime.time
+
+        val toHours = TimeUnit.MILLISECONDS.toHours(time)
+//        val toMin = TimeUnit.MILLISECONDS.toMinutes(time)
+//        val hours = TimeUnit.MILLISECONDS.toHours(durationInMillis)
+//    val remainingMinutesInMillis = durationInMillis - TimeUnit.HOURS.toMillis(hours)
+//    val minutes = TimeUnit.MILLISECONDS.toMinutes(remainingMinutesInMillis)
+
+        toHours.also { timeTable.totalHours = it.toDouble() }
         timeTable.active = false
         timeRepository.save(timeTable)
     }
