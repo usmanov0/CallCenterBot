@@ -27,8 +27,8 @@ class DatabaseInitializer(private val userRepository: UserRepository) : CommandL
                 mutableSetOf(language, language1),
             )
         val user2 = Users(
-            "Aziz",
-            "Aziz",
+            "Jaloliddin",
+            "Jamoldinov",
             "6004110117",
             OPERATOR_CHAT_ID2,
             Role.OPERATOR,

@@ -44,6 +44,10 @@ const val SHARE_CONTACT_UZ = "Marhamat telefoningizni yuboring !"
 const val SHARE_CONTACT_RU = "Поделиться контактом !"
 const val SHARE_CONTACT_EN = "Please send your phone number !"
 
+const val PRESS_ONLINE_UZ = "Marhamat telefoningizni yuboring !"
+const val PRESS_ONLINE_RU = "Поделиться контактом !"
+const val PRESS_ONLINE_EN = "Please send your phone number !"
+
 const val SEND_QUESTION_TRUE_UZ = "Savolingizni bering !"
 const val SEND_QUESTION_TRUE_RU = "Задавай вопрос !"
 const val SEND_QUESTION_TRUE_EN = "Send question !"
@@ -61,5 +65,12 @@ const val BACK_RU = "⬅️ Назад"
 const val BACK_EN = "⬅️ Back"
 
 const val ONLINE_UZ = "ONLINE"
-const val ONLINE_RU = "ONLINE"
-const val ONLINE_EN = "ONLINE"
+const val ONLINE_RU = "В СЕТИ"
+
+//const val OFFLINE_SESSION_UZ = "SESSIYANI YOPISH"
+//const val OFFLINE_SESSION_RU = "ЗАКРЫТИЕ СЕССИИ"
+const val OFFLINE_SESSION = "CLOSE SESSION"
+//
+//const val OFFLINE_UZ = "YOPISH"
+//const val OFFLINE_RU = "СЕССИИ"
+const val OFFLINE = "OFFLINE"

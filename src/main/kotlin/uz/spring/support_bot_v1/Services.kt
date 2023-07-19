@@ -16,7 +16,7 @@ interface UserService {
 
 interface MessageService {
     fun userWriteMsg(dto: UserMessageDto)
-    fun operatorWriteMsg(dto: OperatorMessageDto)
+    fun operatorWriteMsg(dto: OperatorMessageDto) : Sessions
     fun findById(id: Long): MessageReplyDto
     fun getAll(pageable: Pageable): Page<MessageReplyDto>
     fun getAllMessagesNotRepliedByLanguage(operatorId: Long): List<QuestionsForOperatorDto>
@@ -81,22 +81,27 @@ class MessageServiceImpl(
     }
 
     @Transactional
-    override fun operatorWriteMsg(dto: OperatorMessageDto) {
+    override fun operatorWriteMsg(dto: OperatorMessageDto) : Sessions {
         userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId)?.let {
-            dto.run {
-                val message = messageRepository.findByIdAndDeletedFalse(replyMessageId) ?: throw RuntimeException()
-                val user = userRepository.findByChatIdAndDeletedFalse(message.user.chatId)
-
-                val session = sessionRepository.findByUserIdAndActiveTrue(operatorChatId)
-                    ?: sessionRepository.save(Sessions(user!!, it, message.messageLanguage, Date(), null, null, true))
-
-                messageRepository.save(toEntity(it, session, message))
-                messageRepository.findByIdAndDeletedFalse(replyMessageId)?.let {
-                    if (it.session == null) it.session = session
-                    it.replied = true
-                    messageRepository.save(it)
-                }
-            }
+            val session = sessionRepository.findByOperatorChatIdAndActiveTrue(dto.operatorChatId)
+            val message = Messages(MessageType.ANSWER, dto.body, true, null, session!!.chatLanguage, session.user, session)
+            messageRepository.save(message)
+            //            dto.run {
+//                val message = messageRepository.findByIdAndDeletedFalse(replyMessageId) ?: throw RuntimeException()
+//                val user = userRepository.findByChatIdAndDeletedFalse(message.user.chatId)
+//
+//                val session = sessionRepository.findByUserIdAndActiveTrue(operatorChatId)
+//                    ?: sessionRepository.save(Sessions(user!!, it, message.messageLanguage, Date(), null, null, true))
+//
+//                messageRepository.save(toEntity(it, session, message))
+//                messageRepository.findByIdAndDeletedFalse(replyMessageId)?.let {
+//                    if (it.session == null) it.session = session
+//                    it.replied = true
+//                    messageRepository.save(it)
+//                }
+//            }
+            return session ?:
+                throw RuntimeException()
         } ?: throw RuntimeException()
     }
 

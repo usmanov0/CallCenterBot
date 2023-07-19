@@ -23,7 +23,8 @@ interface CallbackQueryHandler {   // baholash
 class MessageHandlerImpl(
     private val userRepository: UserRepository,
     private val messageRepository: MessageRepository,
-    private val messageService: MessageService
+    private val messageService: MessageService,
+    private val sessionRepository: SessionRepository
 ) : MessageHandler {
 
     private fun registerUser(tgUser: User): Users {
@@ -54,6 +55,10 @@ class MessageHandlerImpl(
     }
 
     private fun startUser(message: Message, sender: AbsSender) {
+
+        val user = message.from
+        val registerUser = registerUser(user)
+
         val sendMessage = SendMessage()
         sendMessage.chatId = message.chatId.toString()
         val firstName = message.chat.firstName
@@ -84,6 +89,7 @@ class MessageHandlerImpl(
         sendMessage.replyMarkup = keyboardMarkup
 
         sender.execute(sendMessage)
+
     }
 
     private fun startOperator(message: Message, sender: AbsSender) {
@@ -117,81 +123,86 @@ class MessageHandlerImpl(
             ENGLISH_ -> LanguageEnum.English
             else -> LanguageEnum.Uzbek
         }
-        registerUser.state = SHARE_CONTACT
-        registerUser.language = mutableSetOf(language)
-        userRepository.save(registerUser)
+        if (registerUser.phone != null)
+            sendQuestion(message, sender)
+        else {
+            registerUser.state = SHARE_CONTACT
+            registerUser.language = mutableSetOf(language)
+            userRepository.save(registerUser)
 
-        val language1 = registerUser.language!!.first()  //   [Russian]
+            val language1 = registerUser.language!!.first()  //   [Russian]
 
-        when (language1.toString()) {
-            UZBEK -> {
-                sendMessage.text = SHARE_CONTACT_UZ
+            when (language1.toString()) {
+                UZBEK -> {
+                    sendMessage.text = SHARE_CONTACT_UZ
 
-                val shareContactButton = KeyboardButton()
-                shareContactButton.text = SHARE_UZ
-                shareContactButton.requestContact = true
+                    val shareContactButton = KeyboardButton()
+                    shareContactButton.text = SHARE_UZ
+                    shareContactButton.requestContact = true
 
-                val keyboardMarkup = ReplyKeyboardMarkup()
-                val keyboard: MutableList<KeyboardRow> = ArrayList()
-                val row = KeyboardRow()
-                val row1 = KeyboardRow()
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
 
-                row.add(shareContactButton)
-                row1.add(BACK_UZ)
+                    row.add(shareContactButton)
+                    row1.add(BACK_UZ)
 
-                keyboard.add(row)
-                keyboard.add(row1)
-                keyboardMarkup.keyboard = keyboard
-                keyboardMarkup.resizeKeyboard = true
-                sendMessage.replyMarkup = keyboardMarkup
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage.replyMarkup = keyboardMarkup
+                }
+
+                RUSSIAN -> {
+                    sendMessage.text = SHARE_CONTACT_RU
+
+                    val shareContactButton = KeyboardButton()
+                    shareContactButton.text = SHARE_RU
+                    shareContactButton.requestContact = true
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
+
+                    row.add(shareContactButton)
+                    row1.add(BACK_RU)
+
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage.replyMarkup = keyboardMarkup
+                }
+
+                ENGLISH -> {
+                    sendMessage.text = SHARE_CONTACT_EN
+
+                    val shareContactButton = KeyboardButton()
+                    shareContactButton.text = SHARE_EN
+                    shareContactButton.requestContact = true
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
+
+                    row.add(shareContactButton)
+                    row1.add(BACK_EN)
+
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage.replyMarkup = keyboardMarkup
+                }
             }
-
-            RUSSIAN -> {
-                sendMessage.text = SHARE_CONTACT_RU
-
-                val shareContactButton = KeyboardButton()
-                shareContactButton.text = SHARE_RU
-                shareContactButton.requestContact = true
-
-                val keyboardMarkup = ReplyKeyboardMarkup()
-                val keyboard: MutableList<KeyboardRow> = ArrayList()
-
-                val row = KeyboardRow()
-                val row1 = KeyboardRow()
-
-                row.add(shareContactButton)
-                row1.add(BACK_RU)
-
-                keyboard.add(row)
-                keyboard.add(row1)
-                keyboardMarkup.keyboard = keyboard
-                keyboardMarkup.resizeKeyboard = true
-                sendMessage.replyMarkup = keyboardMarkup
-            }
-
-            ENGLISH -> {
-                sendMessage.text = SHARE_CONTACT_EN
-
-                val shareContactButton = KeyboardButton()
-                shareContactButton.text = SHARE_EN
-                shareContactButton.requestContact = true
-
-                val keyboardMarkup = ReplyKeyboardMarkup()
-                val keyboard: MutableList<KeyboardRow> = ArrayList()
-                val row = KeyboardRow()
-                val row1 = KeyboardRow()
-
-                row.add(shareContactButton)
-                row1.add(BACK_EN)
-
-                keyboard.add(row)
-                keyboard.add(row1)
-                keyboardMarkup.keyboard = keyboard
-                keyboardMarkup.resizeKeyboard = true
-                sendMessage.replyMarkup = keyboardMarkup
-            }
+            sender.execute(sendMessage)
         }
-        sender.execute(sendMessage)
+
     }
 
     private fun sendQuestion(message: Message, sender: AbsSender) {
@@ -350,15 +361,102 @@ class MessageHandlerImpl(
         sendMessage.chatId = message.from.id.toString()
 
         val registerUser = registerUser(message.from)
-//
+        /*
+
+                when (registerUser.language!!.first().toString()) {
+                    UZBEK -> {
+                        sendMessage.text = SHARE_CONTACT_UZ
+
+                        val shareContactButton = KeyboardButton()
+                        shareContactButton.text = SHARE_UZ
+                        shareContactButton.requestContact = true
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(shareContactButton)
+                        row1.add(BACK_UZ)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendMessage.replyMarkup = keyboardMarkup
+                    }
+
+                    RUSSIAN -> {
+                        sendMessage.text = SHARE_CONTACT_RU
+
+                        val shareContactButton = KeyboardButton()
+                        shareContactButton.text = SHARE_RU
+                        shareContactButton.requestContact = true
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(shareContactButton)
+                        row1.add(BACK_RU)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendMessage.replyMarkup = keyboardMarkup
+                    }
+
+                    ENGLISH -> {
+                        sendMessage.text = SHARE_CONTACT_EN
+
+                        val shareContactButton = KeyboardButton()
+                        shareContactButton.text = SHARE_EN
+                        shareContactButton.requestContact = true
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(shareContactButton)
+                        row1.add(BACK_EN)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendMessage.replyMarkup = keyboardMarkup
+                    }
+                }
+        */
+
 //        registerUser.state = WAITING  //CHANGE
 //
 //        userRepository.save(registerUser)
+
+        val keyboardMarkup = ReplyKeyboardMarkup()
+        val keyboard: MutableList<KeyboardRow> = ArrayList()
+        val row = KeyboardRow()
+        val row1 = KeyboardRow()
+
+        row.add(OFFLINE_SESSION)
+        row1.add(OFFLINE)
+
+        keyboard.add(row)
+        keyboard.add(row1)
+        keyboardMarkup.keyboard = keyboard
+        keyboardMarkup.resizeKeyboard = true
+        sendMessage.replyMarkup = keyboardMarkup
+
         val dtoList = messageService.getAllMessagesNotRepliedByLanguage(message.from.id)
-        if (dtoList.isNotEmpty()){
+        if (dtoList.isNotEmpty()) {
             registerUser.state = OperatorState.BUSY.name
             userRepository.save(registerUser)
         }
+
         for (dto in dtoList) {
             sendMessage.text = dto.body
             sender.execute(sendMessage)
@@ -367,12 +465,13 @@ class MessageHandlerImpl(
 
     private fun sendAnswer(message: Message, sender: AbsSender) {
 //        val sendMessage = SendMessage()
+//        val dto = OperatorMessageDto(message.text, message.from.id, null)
+////        val sessions = messageService.operatorWriteMsg(dto)
+//////        val question = messageRepository.findByTelegramMessageId(message.messageId)
 //
-//        val question = messageRepository.findByTelegramMessageId(message.messageId)
-//        sendMessage.chatId = question!!.user.chatId.toString()
+//        sendMessage.chatId = sessions.user.chatId.toString()
 //        sendMessage.text = message.text
 //        sender.execute(sendMessage)
-
 
     }
 
@@ -404,7 +503,7 @@ class MessageHandlerImpl(
 
                 SEND_QUESTION_EN, SEND_QUESTION_RU, SEND_QUESTION_UZ -> sendQuestion(message, sender)
 
-                ONLINE_UZ, ONLINE_RU, ONLINE_EN -> getQuestions(message, sender)
+                ONLINE_UZ, ONLINE_RU -> getQuestions(message, sender)
 
                 else -> {
                     val registerUser = registerUser(message.from)
@@ -412,6 +511,11 @@ class MessageHandlerImpl(
                         handleQuestion(message, sender)
                     } else if (registerUser.state == OperatorState.BUSY.name) {
                         sendAnswer(message, sender)
+                    } else {
+                        val sendMessage = SendMessage()
+                        sendMessage.chatId = registerUser.chatId.toString()
+                        sendMessage.text = "botni qayta ishga tushirish uchun /start tugmasini bosing"
+                        sender.execute(sendMessage)
                     }
                 }
             }
@@ -481,8 +585,6 @@ class MessageHandlerImpl(
             }
             sender.execute(sendMessage)
         }
-
-
     }
 }
 

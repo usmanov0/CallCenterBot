@@ -50,6 +50,8 @@ interface UserRepository : BaseRepository<Users> {
 
 interface SessionRepository : BaseRepository<Sessions> {
     fun findByUserIdAndActiveTrue(userId: Long): Sessions?
+    fun findByOperatorIdAndActiveTrue(operatorId: Long): Sessions?
+    fun findByOperatorChatIdAndActiveTrue(operatorChatId: Long) : Sessions?
 }
 
 interface MessageRepository : BaseRepository<Messages> {

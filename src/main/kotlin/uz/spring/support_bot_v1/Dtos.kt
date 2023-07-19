@@ -73,8 +73,7 @@ data class UserMessageDto(
 data class OperatorMessageDto(
     val body: String,
     val operatorChatId: Long,
-    val replyMessageId: Long,
-    val telegramMessageId: Int
+    val replyMessageId: Long?
 ) {
     fun toEntity(operator: Users, session: Sessions, message: Messages) =
         Messages(
