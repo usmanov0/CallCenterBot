@@ -12,7 +12,8 @@ data class UserDto(
     val lastName: String?,
     val chatId: Long,
     val phone: String?,
-    val language: String
+    val language: String,
+    val state: String?
 ) {
     fun toEntity() =
         Users(
@@ -22,13 +23,14 @@ data class UserDto(
             null,
             mutableSetOf(LanguageEnum.valueOf(language)),
             true,
+            state,
             lastName,
             firstName
         )
 
     companion object {
         fun toDto(user: Users): UserDto {
-            return user.run { UserDto(firstName, lastName, chatId, phone, language.toString()) }
+            return user.run { UserDto(firstName, lastName, chatId, phone, language.toString(), state) }
         }
 
         /* fun registerUser(tgUser: User) = tgUser.run {
@@ -146,6 +148,7 @@ data class GetOneOperatorDto    (
     val operatorState: String,
     var role: String,
     var language: MutableSet<LanguageEnum>?,
+    var state: String?,
     var isOnline: Boolean?,
     var lastName: String?,
     var firstName: String
@@ -154,7 +157,7 @@ data class GetOneOperatorDto    (
     companion object {
         fun toDo(operator: Users) : GetOneOperatorDto{
             return operator.run {
-                GetOneOperatorDto(id, phone, chatId, role.name, operatorState!!.name, language, isOnline, lastName, firstName)
+                GetOneOperatorDto(id, phone, chatId, role.name, operatorState!!.name, language,state, isOnline, lastName, firstName)
             }
         }
     }

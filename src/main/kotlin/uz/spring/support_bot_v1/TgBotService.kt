@@ -31,14 +31,15 @@ class MessageHandlerImpl(
         return userRepository.findByChatIdAndDeletedFalse(tgUser.id)
             ?: return userRepository.save(
                 Users(
-                    tgUser.firstName,
-                    tgUser.lastName,
                     null,
                     tgUser.id,
                     Role.USER,
+                    null,
+                    null,
                     true,
                     CHOOSE_LANGUAGE,
-                    null
+                    tgUser.lastName,
+                    tgUser.firstName
                 )
             )
     }

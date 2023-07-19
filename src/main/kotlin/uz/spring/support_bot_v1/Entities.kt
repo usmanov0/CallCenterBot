@@ -23,7 +23,7 @@ class Users(
     @Enumerated(EnumType.STRING)
     var language: MutableSet<LanguageEnum>?,
     var isOnline: Boolean?,
-   // var state: String?,
+    var state: String?,
     var lastName: String?,
     var firstName: String
 ) : BaseEntity()

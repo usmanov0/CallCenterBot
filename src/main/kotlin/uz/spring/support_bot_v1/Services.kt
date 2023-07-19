@@ -81,6 +81,7 @@ class UserServiceImpl(private val userRepository: UserRepository) : UserService 
         val user = userRepository.findByChatIdAndDeletedFalse(chatId) ?: throw OperatorNotFoundException(chatId)
         user.role = Role.OPERATOR
         user.operatorState = OperatorState.NOT_BUSY
+        userRepository.save(user)
     }
 
     override fun getOperators(): List<GetOneOperatorDto> =

@@ -1,5 +1,8 @@
 package uz.spring.support_bot_v1
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition
+import io.swagger.v3.oas.annotations.info.Contact
+import io.swagger.v3.oas.annotations.info.Info
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -15,6 +18,14 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
 @SpringBootApplication
 @EnableJpaRepositories(repositoryBaseClass = BaseRepositoryImpl::class)
 @EnableConfigurationProperties(TelegramBotProperties::class)
+@OpenAPIDefinition(
+    info = Info(
+        title = "Support bot",
+        version = "1.0",
+        description = "",
+        contact = Contact(name = "G1", email = "jaloliddindeveloper@gmail.com")
+    )
+)
 class SupportBotV1Application
 
 

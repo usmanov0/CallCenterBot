@@ -6,14 +6,10 @@ import java.util.*
 
 sealed class DemoException(message: String? = null): RuntimeException(message) {
     abstract fun errorType(): ErrorCode
-    fun getErrorMessage(errorMessageSource: ResourceBundleMessageSource, vararg array: Any?): BaseMessage{
+    fun getErrorMessage(): BaseMessage{
         return BaseMessage(
             errorType().code,
-            errorMessageSource.getMessage(
-                errorType().toString(),
-                array,
-                Locale(LocaleContextHolder.getLocale().language)
-            )
+            errorType().name
         )
     }
 }

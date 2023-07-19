@@ -16,40 +16,35 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 @ControllerAdvice
-class ExceptionHandlers(
-    private val errorMessageResource: ResourceBundleMessageSource
-) {
+class ExceptionHandlers {
 
     @ExceptionHandler(DemoException::class)
     fun handleException(exception: DemoException): ResponseEntity<*> {
         return when(exception) {
             is UserNotFoundException -> ResponseEntity.badRequest()
-                .body(exception.getErrorMessage(errorMessageResource, exception.id))
+                .body(exception.getErrorMessage())
             is UserAlreadyExistsException -> ResponseEntity.badRequest()
-                .body(exception.getErrorMessage(errorMessageResource, exception.id))
+                .body(exception.getErrorMessage())
             is TimeTableNotFoundException -> ResponseEntity.badRequest()
-                .body(exception.getErrorMessage(errorMessageResource, exception.id))
+                .body(exception.getErrorMessage())
             is OperatorNotFoundException -> ResponseEntity.badRequest()
-                .body(exception.getErrorMessage(errorMessageResource, exception.id))
+                .body(exception.getErrorMessage())
             is MessageNotFoundException -> ResponseEntity.badRequest()
-                .body(exception.getErrorMessage(errorMessageResource, exception.id))
+                .body(exception.getErrorMessage())
             is LanguageNotFoundException -> ResponseEntity.badRequest()
-                .body(exception.getErrorMessage(errorMessageResource, exception.id))
+                .body(exception.getErrorMessage())
         }
     }
 }
 
 
 @RestController
-@RequestMapping("api/v1/operator")
+@RequestMapping("api/v1/operators")
 class OperatorController(
     private val userService: UserService
 ) {
     @PostMapping
     fun create(@RequestParam chatId: Long) = userService.addOperator(chatId)
-
-    @GetMapping
-    fun getAll(pageable: Pageable) = userService.getAll(pageable)
 
     @GetMapping
     fun getAllOperators() = userService.getOperators()
@@ -71,16 +66,15 @@ class TimeTableController(
     @GetMapping
     fun getAll(pageable: Pageable) = timeTableService.getAll(pageable)
 
-    @GetMapping("{timeTableId}")
-    fun getOne(@PathVariable timeTableId: Long) = timeTableService.findById(timeTableId)
+    @GetMapping("{id}")
+    fun getOne(@PathVariable id: Long) = timeTableService.findById(id)
 }
 
 
 @RestController
 @RequestMapping("api/v1/language")
 class LanguageController(
-    private val languageService: LanguageService,
-    private val operatorLanguageService: OperatorLanguageService
+    private val languageService: LanguageService
 ) {
 
     @PostMapping
@@ -98,7 +92,13 @@ class LanguageController(
     @DeleteMapping("{id}")
     fun delete(@PathVariable id: Long) = languageService.delete(id)
 
+}
+
+@RestController
+@RequestMapping("api/v1/operator-language")
+class OperatorLanguageController(
+    private val operatorLanguageService: OperatorLanguageService
+) {
     @PostMapping
     fun createOperatorLanguage(@RequestBody operatorLanguageDto: OperatorLanguageDto) = operatorLanguageService.create(operatorLanguageDto)
-
 }
