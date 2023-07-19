@@ -59,16 +59,33 @@ data class UserMessageDto(
     val userLanguage: String
 ) {
     fun toEntity(user: Users, session: Sessions?) =
-        Messages(MessageType.QUESTION, body, false, null, LanguageEnum.valueOf(userLanguage), user, session)
+        Messages(
+            MessageType.QUESTION,
+            body,
+            false,
+            null,
+            LanguageEnum.valueOf(userLanguage),
+            user,
+            session
+        )
 }
 
 data class OperatorMessageDto(
     val body: String,
     val operatorChatId: Long,
-    val replyMessageId: Long
+    val replyMessageId: Long,
+    val telegramMessageId: Int
 ) {
     fun toEntity(operator: Users, session: Sessions, message: Messages) =
-        Messages(MessageType.ANSWER, body, null, replyMessageId, message.messageLanguage, operator, session)
+        Messages(
+            MessageType.ANSWER,
+            body,
+            true,
+            replyMessageId,
+            message.messageLanguage,
+            operator,
+            session
+        )
 }
 
 data class QuestionsForOperatorDto(

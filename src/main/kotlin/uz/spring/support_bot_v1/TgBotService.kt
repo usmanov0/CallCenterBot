@@ -22,6 +22,7 @@ interface CallbackQueryHandler {   // baholash
 @Service
 class MessageHandlerImpl(
     private val userRepository: UserRepository,
+    private val messageRepository: MessageRepository,
     private val messageService: MessageService
 ) : MessageHandler {
 
@@ -354,10 +355,25 @@ class MessageHandlerImpl(
 //
 //        userRepository.save(registerUser)
         val dtoList = messageService.getAllMessagesNotRepliedByLanguage(message.from.id)
+        if (dtoList.isNotEmpty()){
+            registerUser.state = OperatorState.BUSY.name
+            userRepository.save(registerUser)
+        }
         for (dto in dtoList) {
             sendMessage.text = dto.body
             sender.execute(sendMessage)
         }
+    }
+
+    private fun sendAnswer(message: Message, sender: AbsSender) {
+//        val sendMessage = SendMessage()
+//
+//        val question = messageRepository.findByTelegramMessageId(message.messageId)
+//        sendMessage.chatId = question!!.user.chatId.toString()
+//        sendMessage.text = message.text
+//        sender.execute(sendMessage)
+
+
     }
 
     private fun back(message: Message, sender: AbsSender) {
@@ -394,6 +410,8 @@ class MessageHandlerImpl(
                     val registerUser = registerUser(message.from)
                     if (registerUser.state == SEND_QUESTION) {
                         handleQuestion(message, sender)
+                    } else if (registerUser.state == OperatorState.BUSY.name) {
+                        sendAnswer(message, sender)
                     }
                 }
             }

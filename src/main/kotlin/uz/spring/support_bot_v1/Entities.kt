@@ -44,7 +44,7 @@ class Messages(
     @Enumerated(EnumType.STRING)
     var type: MessageType,
     var body: String,
-    var replied: Boolean?,
+    var replied: Boolean,
     var replyMessageId: Long?,
     @Enumerated(EnumType.STRING)
     var messageLanguage: LanguageEnum,

@@ -68,7 +68,9 @@ interface LanguageRepository : BaseRepository<Languages> {
 }
 
 interface OperatorsLanguagesRepository : BaseRepository<OperatorsLanguages> {
-    @Query(value = "select l from OperatorsLanguages as ol join Languages as l on ol.language.id=l.id " +
-                "where ol.operator.id=?1")
+    @Query(
+        value = "select l from OperatorsLanguages as ol join Languages as l on ol.language.id=l.id " +
+                "where ol.operator.id=?1"
+    )
     fun getAllLanguagesByOperatorId(operatorId: Long): List<Languages>
 }

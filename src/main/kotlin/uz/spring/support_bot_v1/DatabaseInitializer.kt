@@ -29,7 +29,7 @@ class DatabaseInitializer(private val userRepository: UserRepository) : CommandL
         val user2 = Users(
             "Aziz",
             "Aziz",
-            "995611060",
+            "6004110117",
             OPERATOR_CHAT_ID2,
             Role.OPERATOR,
             true,
