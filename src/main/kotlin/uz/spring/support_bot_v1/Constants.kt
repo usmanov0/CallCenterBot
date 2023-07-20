@@ -28,12 +28,25 @@ const val LANGUAGE = "language"
 const val CHOOSE_LANGUAGE = "CHOOSE_LANGUAGE"
 const val SHARE_CONTACT = "SHARE_CONTACT"
 const val SEND_QUESTION = "SEND_QUESTION"
+const val BEFORE_SEND_QUESTION = "BEFORE_SEND_QUESTION"
 const val WAITING = "WAITING"
 
+
+const val SEND_QUESTION_UZ = "Savol yuborish"
+const val SEND_QUESTION_RU = "Отправить вопрос"
+const val SEND_QUESTION_EN = "Send question"
+
+const val SETTINGS_UZ = "Til tanlang"
+const val SETTINGS_EN = "Choose language"
+const val SETTINGS_RU = "Выберите язык"
 
 const val QUESTION_UZ = "Marhamat savolinggiz yozing !"
 const val QUESTION_RU = "Пожалуйста, напишите свой вопрос!"
 const val QUESTION_EN = "Please write your question!"
+
+const val CHOOSE_OPTION_UZ = "Variandlarni tanlang !"
+const val CHOOSE_OPTION_RU = "ВЫБЕРИТЕ_ОПЦИЮ !"
+const val CHOOSE_OPTION_EN = "Choose option !"
 
 const val SHARE_CONTACT_UZ = "Marhamat telefoningizni yuboring !"
 const val SHARE_CONTACT_RU = "Поделиться контактом !"
@@ -58,6 +71,10 @@ const val SHARE_EN = "\uD83D\uDCDE Share Contact";
 const val BACK_UZ = "⬅️ Ortga"
 const val BACK_RU = "⬅️ Назад"
 const val BACK_EN = "⬅️ Back"
+
+const val SETTING_UZ = "⚙️ Sozlamalar"
+const val SETTING_RU = "⚙️ Параметр"
+const val SETTING_EN = "⚙️ Setting"
 
 const val ONLINE_UZ = "ONLINE"
 const val ONLINE_RU = "В СЕТИ"
