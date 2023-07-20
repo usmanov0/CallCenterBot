@@ -21,6 +21,5 @@ class TgBotController(
             update.hasCallbackQuery() -> callbackQueryHandler.handle(update.callbackQuery, this)
             update.hasMessage() -> messageHandler.handle(update.message, this)
         }
-
     }
 }

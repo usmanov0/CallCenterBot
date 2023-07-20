@@ -32,13 +32,9 @@ const val SEND_QUESTION = "SEND_QUESTION"
 const val WAITING = "WAITING"
 
 
-const val QUESTION_UZ = "Marhamat savolinggiz bo'lsa Savol berish tugmasini bosing !"
-const val QUESTION_RU = "Если у вас есть какие-либо вопросы, пожалуйста, нажмите кнопку Задать вопрос!"
-const val QUESTION_EN = "If you have any questions, please click the Ask a Question button!"
-
-const val SEND_QUESTION_UZ = "Savol berish"
-const val SEND_QUESTION_RU = "Задайте вопрос"
-const val SEND_QUESTION_EN = "Ask a question"
+const val QUESTION_UZ = "Marhamat savolinggiz yozing !"
+const val QUESTION_RU = "Пожалуйста, напишите свой вопрос!"
+const val QUESTION_EN = "Please write your question!"
 
 const val SHARE_CONTACT_UZ = "Marhamat telefoningizni yuboring !"
 const val SHARE_CONTACT_RU = "Поделиться контактом !"
