@@ -14,7 +14,7 @@ class BaseEntity(
     @Column(nullable = false) @ColumnDefault(value = "false") var deleted: Boolean = false
 )
 
-@Entity(name = "users")
+@Entity()
 class Users(
     @Column(length = 50, unique = true) var phone: String?,
     @Column(unique = true) var chatId: Long,
@@ -22,7 +22,7 @@ class Users(
     @Enumerated(EnumType.STRING) var operatorState: OperatorState?,
     @Enumerated(EnumType.STRING)
     var language: LanguageEnum?,
-    var isOnline: Boolean?,
+    var isOnline: Boolean = false,
     var state: String?,
     var lastName: String?,
     var firstName: String
@@ -32,7 +32,7 @@ class Users(
 class Sessions(
     @ManyToOne var user: Users,
     @ManyToOne var operator: Users?,
-    var chatLanguage: LanguageEnum,
+    @Enumerated(EnumType.STRING) var chatLanguage: LanguageEnum,
     var startTime: Date,
     var endTime: Date?,
     var rate: Short?,
@@ -51,15 +51,6 @@ class Messages(
     var user: Users,
     @ManyToOne
     var session: Sessions?,
-) : BaseEntity()
-
-@Entity
-class TimeTable(
-    var startTime: Date,
-    var endTime: Date?,
-    var totalHours: Double?,
-    var active: Boolean,
-    @ManyToOne var operator: Users,
 ) : BaseEntity()
 
 @Entity

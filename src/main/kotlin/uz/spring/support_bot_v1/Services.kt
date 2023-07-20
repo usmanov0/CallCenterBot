@@ -21,16 +21,16 @@ interface UserService {
 
     fun deleteOperator(chatId: Long)
 
-    fun onlineOperator(operatorChatId: Long) : List<MessageReplyDto>?
+    fun onlineOperator(operatorChatId: Long): List<MessageReplyDto>?
 
-    fun closeSession(operatorChatId: Long) : List<MessageReplyDto>?
+    fun closeSession(operatorChatId: Long): List<MessageReplyDto>?
 
     fun offlineOperator(operatorChatId: Long)
 }
 
 interface MessageService {
-    fun userWriteMsg(dto: UserMessageDto) : OperatorMessageDto?
-    fun operatorWriteMsg(dto: OperatorMessageDto) : UserMessageDto
+    fun userWriteMsg(dto: UserMessageDto): OperatorMessageDto?
+    fun operatorWriteMsg(dto: OperatorMessageDto): UserMessageDto
     fun findById(id: Long): MessageReplyDto
     fun getAll(pageable: Pageable): Page<MessageReplyDto>
     fun getAllMessagesNotRepliedByLanguage(operatorId: Long): List<QuestionsForOperatorDto>
@@ -47,7 +47,7 @@ interface SessionService {
 }
 
 interface LanguageService {
-    fun createLanguage(dto: LanguageDto)
+    fun createLanguage(name: String)
 
     fun updateLanguage(id: Long, dto: LanguageDto)
 
@@ -59,14 +59,8 @@ interface LanguageService {
 
 }
 
-interface TimeTableService {
-    fun operatorStart(operatorId: Long)
-    fun findById(timeTableId: Long): TimeTableDto
-    fun getAll(pageable: Pageable): Page<TimeTableDto>
-    fun operatorFinish(operatorId: Long)
-}
 
-interface OperatorLanguageService{
+interface OperatorLanguageService {
     fun create(dto: OperatorLanguageDto)
 }
 
@@ -75,7 +69,7 @@ class UserServiceImpl(
     private val userRepository: UserRepository,
     private val sessionRepository: SessionRepository,
     private val messageRepository: MessageRepository,
-    private val timeTableService: TimeTableService
+    private val operatorsLanguagesRepository: OperatorsLanguagesRepository
 ) : UserService {
     /*   override fun create(dto: UserDto):UserDto {
            if (userRepository.findByChatIdAndDeletedFalse(dto.chatId) != null) throw UserAlreadyExistsException(dto.chatId)
@@ -110,23 +104,36 @@ class UserServiceImpl(
         userRepository.save(operator)
     }
 
-    override fun onlineOperator(operatorChatId: Long) : List<MessageReplyDto>? {
-        val operator = userRepository.findByChatIdAndDeletedFalse(operatorChatId) ?: throw OperatorNotFoundException(operatorChatId)
-        var messageList : List<MessageReplyDto>? = null
-        sessionRepository.findByOperatorAndActiveTrue(null)?.let {
-            it.operator = operator
-            sessionRepository.save(it)
+    override fun onlineOperator(operatorChatId: Long): List<MessageReplyDto>? {
+        val operator = userRepository.findByChatIdAndDeletedFalse(operatorChatId) ?: throw OperatorNotFoundException(
+            operatorChatId
+        )
+        operator.isOnline = true
+        var messageList: List<MessageReplyDto>? = null
+        val languages = operatorsLanguagesRepository.getAllLanguagesByOperatorId(operator.id!!)
+        var sessions: Sessions? = null
+
+        for (item in languages) {
+            val sessions1 = sessionRepository.getSession(item.name)
+            if (sessions1 != null) {
+                sessions = sessions1
+                break
+            }
+        }
+        if (sessions != null) {
+            sessions.operator = operator
+            sessionRepository.save(sessions)
             operator.operatorState = OperatorState.BUSY
             userRepository.save(operator)
-            timeTableService.operatorStart(operator.id!!)
-            messageList = messageRepository.findBySessionIdOrderByCreatedDate(it.id).map { MessageReplyDto.toDto(it) }
+            messageList =
+                messageRepository.findBySessionIdOrderByCreatedDate(sessions.id).map { MessageReplyDto.toDto(it) }
         }
         return messageList
     }
 
     override fun closeSession(operatorChatId: Long): List<MessageReplyDto>? {
-        userRepository.findByChatIdAndDeletedFalse(operatorChatId)?.let {operator ->
-            sessionRepository.findByOperatorAndActiveTrue(operator)?.let {session ->
+        userRepository.findByChatIdAndDeletedFalse(operatorChatId)?.let { operator ->
+            sessionRepository.findByOperatorAndActiveTrue(operator)?.let { session ->
                 session.active = false
                 session.endTime = Date()
                 sessionRepository.save(session)
@@ -141,7 +148,7 @@ class UserServiceImpl(
 
     override fun offlineOperator(operatorChatId: Long) {
         userRepository.findByChatIdAndDeletedFalse(operatorChatId)?.let { operator ->
-            sessionRepository.findByOperatorAndActiveTrue(operator)?.let {session ->
+            sessionRepository.findByOperatorAndActiveTrue(operator)?.let { session ->
                 session.active = false
                 session.endTime = Date()
                 sessionRepository.save(session)
@@ -149,10 +156,10 @@ class UserServiceImpl(
             operator.operatorState = OperatorState.NOT_BUSY
             operator.isOnline = false
             userRepository.save(operator)
-            timeTableService.operatorFinish(operator.id!!)
         } ?: throw OperatorNotFoundException(operatorChatId)
     }
 }
+
 @Service
 class MessageServiceImpl(
     private val messageRepository: MessageRepository,
@@ -162,28 +169,35 @@ class MessageServiceImpl(
 ) : MessageService {
     override fun userWriteMsg(dto: UserMessageDto): OperatorMessageDto? {
         userRepository.findByChatIdAndDeletedFalse(dto.userChatId)?.let {
-           var sessions: Sessions? = sessionRepository.findByUserChatIdAndActiveTrue(dto.userChatId)
-           var operatorMessageDto: OperatorMessageDto? = null
-           if (sessions == null) {
-               val newSession = Sessions(it, null, LanguageEnum.valueOf(dto.userLanguage), Date(), null, null, true)
-               val operator = userRepository.getOperator(Role.OPERATOR, OperatorState.NOT_BUSY, dto.userLanguage)
-               if (operator != null) {
-                   operator.operatorState = OperatorState.BUSY
-                   userRepository.save(operator)
-                   newSession.operator = operator
-                   operatorMessageDto = OperatorMessageDto(dto.body, operator.chatId, null)
-               }
-               sessions = sessionRepository.save(newSession)
-           }
-           val message = Messages(MessageType.QUESTION, dto.body, false, LanguageEnum.valueOf(dto.userLanguage), it, sessions)
-           messageRepository.save(message)
-           return operatorMessageDto
+            var sessions: Sessions? = sessionRepository.findByUserChatIdAndActiveTrue(dto.userChatId)
+            var operatorMessageDto: OperatorMessageDto? = null
+            if (sessions == null) {
+                val newSession = Sessions(it, null, LanguageEnum.valueOf(dto.userLanguage), Date(), null, null, true)
+                val operator = userRepository.getOperator(
+                    Role.OPERATOR,
+                    OperatorState.NOT_BUSY,
+                    LanguageEnum.valueOf(dto.userLanguage)
+                )
+                if (operator != null) {
+                    operator.operatorState = OperatorState.BUSY
+                    userRepository.save(operator)
+                    newSession.operator = operator
+                    operatorMessageDto = OperatorMessageDto(dto.body, operator.chatId, null)
+                }
+                sessions = sessionRepository.save(newSession)
+            } else if (sessions.operator != null) {
+                operatorMessageDto = OperatorMessageDto(dto.body, sessions.operator!!.chatId, null)
+            }
+            val message =
+                Messages(MessageType.QUESTION, dto.body, false, LanguageEnum.valueOf(dto.userLanguage), it, sessions)
+            messageRepository.save(message)
+            return operatorMessageDto
         } ?: throw UserNotFoundException(dto.userChatId)
     }
 
     @Transactional
-    override fun operatorWriteMsg(dto: OperatorMessageDto) : UserMessageDto {
-        userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId)?.let {operator ->
+    override fun operatorWriteMsg(dto: OperatorMessageDto): UserMessageDto {
+        userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId)?.let { operator ->
             val session = sessionRepository.findByOperatorChatIdAndActiveTrue(dto.operatorChatId)
             val message = Messages(MessageType.ANSWER, dto.body, false, session!!.chatLanguage, session.user, session)
             messageRepository.save(message)
@@ -252,53 +266,12 @@ class SessionServiceImpl(private val sessionRepository: SessionRepository) : Ses
 }
 
 @Service
-class TimeTableServiceImp(
-    private val timeRepository: TimeRepository,
-    private val userRepository: UserRepository,
-    private val entityManager: EntityManager
-) : TimeTableService {
-
-    override fun operatorStart(operatorId: Long) {
-        val operator = operatorId.let {
-            userRepository.existsByIdAndDeletedFalse(it).runIfFalse { throw OperatorNotFoundException(it) }
-            entityManager.getReference(Users::class.java, it)
-        }
-        timeRepository.save(TimeTable(Date(), null, null, true, operator))
-    }
-
-    override fun findById(timeTableId: Long): TimeTableDto =
-        timeRepository.findByIdAndDeletedFalse(timeTableId)?.let { TimeTableDto.toDto(it) }
-            ?: throw TimeTableNotFoundException(timeTableId)
-
-    override fun getAll(pageable: Pageable): Page<TimeTableDto> =
-        timeRepository.findAllNotDeleted(pageable).map { TimeTableDto.toDto(it) }
-
-    override fun operatorFinish(operatorId: Long) {
-        val timeTable =
-            timeRepository.findByOperatorIdAndActiveTrue(operatorId) ?: throw TimeTableNotFoundException(operatorId)
-        timeTable.endTime = Date()
-        val time = timeTable.endTime!!.time - timeTable.startTime.time
-
-        val toHours = TimeUnit.MILLISECONDS.toHours(time)
-
-//        val toMin = TimeUnit.MILLISECONDS.toMinutes(time)
-//        val hours = TimeUnit.MILLISECONDS.toHours(durationInMillis)
-//    val remainingMinutesInMillis = durationInMillis - TimeUnit.HOURS.toMillis(hours)
-//    val minutes = TimeUnit.MILLISECONDS.toMinutes(remainingMinutesInMillis)
-
-        toHours.also { timeTable.totalHours = it.toDouble() }
-        timeTable.active = false
-        timeRepository.save(timeTable)
-    }
-}
-
-@Service
 class LanguageServiceImpl(
     private val languageRepository: LanguageRepository
 ) : LanguageService {
-    override fun createLanguage(dto: LanguageDto) {
-        dto.run {
-            languageRepository.save(toEntity())
+    override fun createLanguage(name: String) {
+        languageRepository.existsByName(LanguageEnum.valueOf(name)).runIfFalse {
+            languageRepository.save(Languages(LanguageEnum.valueOf(name)))
         }
     }
 
@@ -312,6 +285,7 @@ class LanguageServiceImpl(
             }
         }
     }
+
     override fun getAll(pageable: Pageable) =
         languageRepository.findAllNotDeleted(pageable).map { GetOneLanguageDto.toDto(it) }
 
@@ -333,8 +307,11 @@ class OperatorLanguageServiceImp(
 ) : OperatorLanguageService {
 
     override fun create(dto: OperatorLanguageDto) {
-        val operator = userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId) ?: throw OperatorNotFoundException(dto.operatorChatId)
-        val languages = languageRepository.findByIdAndDeletedFalse(dto.languageId) ?: throw LanguageNotFoundException(dto.languageId)
+        val operator = userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId)
+            ?: throw OperatorNotFoundException(dto.operatorChatId)
+        val languages = languageRepository.findByIdAndDeletedFalse(dto.languageId) ?: throw LanguageNotFoundException(
+            dto.languageId
+        )
         repository.save(OperatorsLanguages(languages, operator))
     }
 }

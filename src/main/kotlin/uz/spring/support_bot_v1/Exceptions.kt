@@ -37,3 +37,6 @@ class TimeTableNotFoundException(val id: Long) : DemoException(ErrorCode.TIME_TA
 class LanguageNotFoundException(val id: Long) : DemoException() {
     override fun errorType() = ErrorCode.LANGUAGE_NOT_FOUND
 }
+class LanguageExistsException(val name: String) : DemoException() {
+    override fun errorType() = ErrorCode.LANGUAGE_ALREADY_EXISTS
+}

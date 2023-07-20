@@ -33,6 +33,9 @@ class ExceptionHandlers {
                 .body(exception.getErrorMessage())
             is LanguageNotFoundException -> ResponseEntity.badRequest()
                 .body(exception.getErrorMessage())
+
+            is LanguageExistsException -> ResponseEntity.badRequest()
+                .body(exception.getErrorMessage())
         }
     }
 }
@@ -57,19 +60,6 @@ class OperatorController(
 }
 
 
-@RestController
-@RequestMapping("api/v1/time-table")
-class TimeTableController(
-    private val timeTableService: TimeTableService
-) {
-
-    @GetMapping
-    fun getAll(pageable: Pageable) = timeTableService.getAll(pageable)
-
-    @GetMapping("{id}")
-    fun getOne(@PathVariable id: Long) = timeTableService.findById(id)
-}
-
 
 @RestController
 @RequestMapping("api/v1/language")
@@ -78,7 +68,8 @@ class LanguageController(
 ) {
 
     @PostMapping
-    fun create(@RequestBody languageDto: LanguageDto) = languageService.createLanguage(languageDto)
+    fun create(@RequestParam name: String) =
+        languageService.createLanguage(name)
 
     @GetMapping
     fun getAll(pageable: Pageable) = languageService.getAll(pageable)

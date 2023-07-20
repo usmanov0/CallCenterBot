@@ -50,33 +50,42 @@ interface UserRepository : BaseRepository<Users> {
     fun findAllByRoleAndDeletedFalse(role: Role): List<Users>
 
     fun existsByIdAndDeletedFalse(id: Long): Boolean
-    @Query(value = "select o from users o inner " +
-            "join OperatorsLanguages ol on o.id = ol.operator.id where " +
-            "o.role = :role and o.isOnline = true and o.operatorState = :state and ol.language.name = :language limit 1")
-    fun getOperator(@Param("role") role: Role, @Param("state") state: OperatorState, @Param("language") languages: String) : Users?
+
+    /* @Query(value = "select o from users o inner " +
+             "join OperatorsLanguages ol on o.id = ol.operator.id where " +
+             "o.role = :role and o.isOnline = true and o.operatorState = :state and ol.language.name = :language limit 1")*/
+    @Query(
+        value = "select o from Users o inner join OperatorsLanguages ol on o.id = ol.operator.id " +
+                "where o.role = :role and o.isOnline = true and o.operatorState = :state and ol.language.name = :language"
+    )
+    fun getOperator(
+        @Param("role") role: Role,
+        @Param("state") state: OperatorState,
+        @Param("language") languages: LanguageEnum
+    ): Users?
 }
 
 interface SessionRepository : BaseRepository<Sessions> {
     fun findByUserChatIdAndActiveTrue(userChatId: Long): Sessions?
     fun findByOperatorIdAndActiveTrue(operatorId: Long): Sessions?
-    fun findByOperatorChatIdAndActiveTrue(operatorChatId: Long) : Sessions?
-    fun findByOperatorAndActiveTrue(operator: Users? = null) : Sessions?
+    fun findByOperatorChatIdAndActiveTrue(operatorChatId: Long): Sessions?
+
+
+    @Query(value = "select s from Sessions s where s.chatLanguage = :language and s.operator = null and s.active = true")
+    fun getSession(@Param("language") languages: LanguageEnum): Sessions?
+    fun findByOperatorAndActiveTrue(operator: Users): Sessions?
 }
 
 interface MessageRepository : BaseRepository<Messages> {
     @Query(value = "select * from messages where replied=false and (message_language=?1)", nativeQuery = true)
     fun getNotRepliedMessagesForOperator(conditions: String): List<Messages>
 
-    fun findBySessionIdOrderByCreatedDate(sessionId: Long?) : List<Messages>
-     fun findAllBySessionId(sessionId: Long): List<Messages>
-}
-
-interface TimeRepository : BaseRepository<TimeTable> {
-    fun findByOperatorIdAndActiveTrue(operatorId: Long): TimeTable?
+    fun findBySessionIdOrderByCreatedDate(sessionId: Long?): List<Messages>
+    fun findAllBySessionId(sessionId: Long): List<Messages>
 }
 
 interface LanguageRepository : BaseRepository<Languages> {
-    fun findByName(name: String)
+    fun existsByName(name: LanguageEnum): Boolean
 }
 
 interface OperatorsLanguagesRepository : BaseRepository<OperatorsLanguages> {

@@ -97,21 +97,7 @@ data class QuestionsForOperatorDto(
     }
 }
 
-data class TimeTableDto(
-    var startTime: Date,
-    var endTime: Date?,
-    var totalHours: Double?,
-    var active: Boolean,
-    val operatorId: Long?,
-) {
-    companion object {
-        fun toDto(timeTable: TimeTable): TimeTableDto {
-            return timeTable.run {
-                TimeTableDto(startTime, endTime, totalHours, active, operator.id)
-            }
-        }
-    }
-}
+
 
 data class LanguageDto(
     val name: String
