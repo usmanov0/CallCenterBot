@@ -2,6 +2,7 @@ package uz.spring.support_bot_v1
 
 import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
+import org.apache.catalina.User
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
@@ -12,6 +13,7 @@ import org.springframework.data.jpa.repository.support.JpaEntityInformation
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository
 import org.springframework.data.repository.NoRepositoryBean
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.data.repository.query.Param
 
 @NoRepositoryBean
 interface BaseRepository<T : BaseEntity> : JpaRepository<T, Long>, JpaSpecificationExecutor<T> {
@@ -48,19 +50,25 @@ interface UserRepository : BaseRepository<Users> {
     fun findAllByRoleAndDeletedFalse(role: Role): List<Users>
 
     fun existsByIdAndDeletedFalse(id: Long): Boolean
+    @Query(value = "select o from users o inner " +
+            "join OperatorsLanguages ol on o.id = ol.operator.id where " +
+            "o.role = :role and o.isOnline = true and o.operatorState = :state and ol.language.name = :language limit 1")
+    fun getOperator(@Param("role") role: Role, @Param("state") state: OperatorState, @Param("language") languages: String) : Users?
 }
 
 interface SessionRepository : BaseRepository<Sessions> {
-    fun findByUserIdAndActiveTrue(userId: Long): Sessions?
+    fun findByUserChatIdAndActiveTrue(userChatId: Long): Sessions?
     fun findByOperatorIdAndActiveTrue(operatorId: Long): Sessions?
     fun findByOperatorChatIdAndActiveTrue(operatorChatId: Long) : Sessions?
+    fun findByOperatorAndActiveTrue(operator: Users? = null) : Sessions?
 }
 
 interface MessageRepository : BaseRepository<Messages> {
     @Query(value = "select * from messages where replied=false and (message_language=?1)", nativeQuery = true)
     fun getNotRepliedMessagesForOperator(conditions: String): List<Messages>
 
-    fun findAllBySessionId(sessionId: Long): List<Messages>
+    fun findBySessionIdOrderByCreatedDate(sessionId: Long?) : List<Messages>
+     fun findAllBySessionId(sessionId: Long): List<Messages>
 }
 
 interface TimeRepository : BaseRepository<TimeTable> {
