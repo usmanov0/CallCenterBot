@@ -31,7 +31,7 @@ class Users(
 @Entity
 class Sessions(
     @ManyToOne var user: Users,
-    @ManyToOne var operator: Users,
+    @ManyToOne var operator: Users?,
     var chatLanguage: LanguageEnum,
     var startTime: Date,
     var endTime: Date?,
