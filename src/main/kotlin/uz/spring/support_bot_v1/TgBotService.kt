@@ -428,7 +428,6 @@ class MessageHandlerImpl(
         val registerUser = registerUser(message.from)
         return when (registerUser.state) {
             SHARE_CONTACT, SEND_QUESTION -> start(message, sender)
-            QUESTION -> chooseLanguage(message, sender)
             else -> start(message, sender)
         }
     }
@@ -479,7 +478,7 @@ class MessageHandlerImpl(
             val phone = message.contact.phoneNumber
             val registerUser = registerUser(message.from)
 
-            registerUser.state = QUESTION
+            registerUser.state = SEND_QUESTION
             registerUser.phone = phone.toString()
             userRepository.save(registerUser)
 

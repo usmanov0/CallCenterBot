@@ -27,7 +27,6 @@ const val LANGUAGE = "language"
 //   STATES
 const val CHOOSE_LANGUAGE = "CHOOSE_LANGUAGE"
 const val SHARE_CONTACT = "SHARE_CONTACT"
-const val QUESTION = "QUESTION"
 const val SEND_QUESTION = "SEND_QUESTION"
 const val WAITING = "WAITING"
 
