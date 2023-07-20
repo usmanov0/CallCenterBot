@@ -122,14 +122,14 @@ class MessageHandlerImpl(
             else -> LanguageEnum.Uzbek
         }
         registerUser.state = SHARE_CONTACT
-        registerUser.language = mutableSetOf(language)
+        registerUser.language = language
         userRepository.save(registerUser)
 
         if (registerUser.phone != null)
             sendQuestion(message, sender)
         else {
 
-            val language1 = registerUser.language!!.first()  //   [Russian]
+            val language1 = registerUser.language!!  //   [Russian]
 
             when (language1.toString()) {
                 UZBEK -> {
@@ -214,7 +214,7 @@ class MessageHandlerImpl(
 
         userRepository.save(registerUser)
 
-        val language1 = registerUser.language!!.first()  //   [Russian]
+        val language1 = registerUser.language!!  //   [Russian]
 
         when (language1.toString()) {
             UZBEK -> {
@@ -270,7 +270,7 @@ class MessageHandlerImpl(
 
         val registerUser = registerUser(message.from)
 
-        val language1 = registerUser.language!!.first()  //   [Russian]
+        val language1 = registerUser.language!!  //   [Russian]
 
         when (language1.toString()) {
             UZBEK -> {
@@ -278,7 +278,7 @@ class MessageHandlerImpl(
                     UserMessageDto(
                         message.text,
                         registerUser.chatId,
-                        registerUser.language!!.first().name
+                        registerUser.language!!.name
                     )
                 )
             }
@@ -288,7 +288,7 @@ class MessageHandlerImpl(
                     UserMessageDto(
                         message.text,
                         registerUser.chatId,
-                        registerUser.language!!.first().name
+                        registerUser.language!!.name
                     )
                 )
             }
@@ -298,7 +298,7 @@ class MessageHandlerImpl(
                     UserMessageDto(
                         message.text,
                         registerUser.chatId,
-                        registerUser.language!!.first().name
+                        registerUser.language!!.name
                     )
                 )
             }
@@ -312,7 +312,7 @@ class MessageHandlerImpl(
         val registerUser = registerUser(message.from)
         /*
 
-                when (registerUser.language!!.first().toString()) {
+                when (registerUser.language!!.toString()) {
                     UZBEK -> {
                         sendMessage.text = SHARE_CONTACT_UZ
 
@@ -482,7 +482,7 @@ class MessageHandlerImpl(
             registerUser.phone = phone.toString()
             userRepository.save(registerUser)
 
-            val language1 = registerUser.language!!.first()
+            val language1 = registerUser.language!!
 
             when (language1.toString()) {
                 UZBEK -> {

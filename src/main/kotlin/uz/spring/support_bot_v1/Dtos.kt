@@ -1,9 +1,6 @@
 package uz.spring.support_bot_v1
 
-import jakarta.persistence.Column
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
-import java.util.Date
+import java.util.*
 
 data class BaseMessage(val code: Int, val message: String?)
 
@@ -21,7 +18,7 @@ data class UserDto(
             chatId,
             Role.USER,
             null,
-            mutableSetOf(LanguageEnum.valueOf(language)),
+            LanguageEnum.valueOf(language),
             true,
             state,
             lastName,
@@ -68,7 +65,6 @@ data class UserMessageDto(
             MessageType.QUESTION,
             body,
             false,
-            null,
             LanguageEnum.valueOf(userLanguage),
             user,
             session
@@ -85,7 +81,6 @@ data class OperatorMessageDto(
             MessageType.ANSWER,
             body,
             true,
-            replyMessageId,
             message.messageLanguage,
             operator,
             session
@@ -141,23 +136,34 @@ data class GetOneLanguageDto(
     }
 }
 
-data class GetOneOperatorDto    (
+data class GetOneOperatorDto(
     val id: Long?,
     val phone: String?,
     val chatId: Long,
     val operatorState: String,
     var role: String,
-    var language: MutableSet<LanguageEnum>?,
+    var language: LanguageEnum?,
     var state: String?,
     var isOnline: Boolean?,
     var lastName: String?,
     var firstName: String
-){
+) {
 
     companion object {
-        fun toDo(operator: Users) : GetOneOperatorDto{
+        fun toDo(operator: Users): GetOneOperatorDto {
             return operator.run {
-                GetOneOperatorDto(id, phone, chatId, role.name, operatorState!!.name, language,state, isOnline, lastName, firstName)
+                GetOneOperatorDto(
+                    id,
+                    phone,
+                    chatId,
+                    role.name,
+                    operatorState!!.name,
+                    language,
+                    state,
+                    isOnline,
+                    lastName,
+                    firstName
+                )
             }
         }
     }

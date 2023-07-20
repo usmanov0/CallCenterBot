@@ -21,7 +21,7 @@ class Users(
     @Enumerated(EnumType.STRING) var role: Role,
     @Enumerated(EnumType.STRING) var operatorState: OperatorState?,
     @Enumerated(EnumType.STRING)
-    var language: MutableSet<LanguageEnum>?,
+    var language: LanguageEnum?,
     var isOnline: Boolean?,
     var state: String?,
     var lastName: String?,
@@ -45,7 +45,6 @@ class Messages(
     var type: MessageType,
     var body: String,
     var replied: Boolean,
-    var replyMessageId: Long?,
     @Enumerated(EnumType.STRING)
     var messageLanguage: LanguageEnum,
     @ManyToOne
