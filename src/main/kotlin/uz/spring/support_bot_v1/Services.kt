@@ -113,10 +113,10 @@ class UserServiceImpl(
         val languages = operatorsLanguagesRepository.getAllLanguagesByOperatorId(operator.id!!)
         var sessions: Sessions? = null
 
-        for (item in languages) {
+        for (item in languages) {  // Uzbek  Russian
             val sessions1 = sessionRepository.getSession(item.name)
-            if (sessions1 != null) {
-                sessions = sessions1
+            if (sessions1.isNotEmpty()) {
+                sessions = sessions1[0]
                 break
             }
         }

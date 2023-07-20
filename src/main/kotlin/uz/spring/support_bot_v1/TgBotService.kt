@@ -131,12 +131,13 @@ class MessageHandlerImpl(
             ENGLISH_ -> LanguageEnum.English
             else -> LanguageEnum.Uzbek
         }
+        registerUser.language = language
+        userRepository.save(registerUser)
 
         if (registerUser.state == BEFORE_SEND_QUESTION) {
             getContact(message, sender)
         } else {
             registerUser.state = SHARE_CONTACT
-            registerUser.language = language
             userRepository.save(registerUser)
 
             if (registerUser.phone != null)
@@ -304,7 +305,7 @@ class MessageHandlerImpl(
                     val operatorChatId = userWriteMsg.operatorChatId
                     sendMessage.chatId = operatorChatId.toString()
                     sendMessage.text = message.text
-                    sendMessage.replyMarkup = ReplyKeyboardRemove(true)
+//                    sendMessage.replyMarkup = ReplyKeyboardRemove(true)
                     sender.execute(sendMessage)
                 }
             }
@@ -321,7 +322,7 @@ class MessageHandlerImpl(
                     val operatorChatId = userWriteMsg.operatorChatId
                     sendMessage.chatId = operatorChatId.toString()
                     sendMessage.text = message.text
-                    sendMessage.replyMarkup = ReplyKeyboardRemove(true)
+//                    sendMessage.replyMarkup = ReplyKeyboardRemove(true)
                     sender.execute(sendMessage)
                 }
             }
@@ -338,7 +339,7 @@ class MessageHandlerImpl(
                     val operatorChatId = userWriteMsg.operatorChatId
                     sendMessage.chatId = operatorChatId.toString()
                     sendMessage.text = message.text
-                    sendMessage.replyMarkup = ReplyKeyboardRemove(true)
+//                    sendMessage.replyMarkup = ReplyKeyboardRemove(true)
                     sender.execute(sendMessage)
                 }
             }
@@ -348,6 +349,9 @@ class MessageHandlerImpl(
     private fun getQuestions(message: Message, sender: AbsSender) {
         var temp: Boolean = false
         val sendMessage = SendMessage()
+        val registerUser = registerUser(message.from)
+        registerUser.state = SEND_ANSWER
+        userRepository.save(registerUser)
 
         val operatorChatId = message.from.id
         sendMessage.chatId = operatorChatId.toString()
@@ -364,6 +368,7 @@ class MessageHandlerImpl(
         }
         if (!temp)
             sendMessage.text = "Sizda hozircha habar yoq"
+
         val keyboardMarkup = ReplyKeyboardMarkup()
         val keyboard: MutableList<KeyboardRow> = ArrayList()
         val row = KeyboardRow()
@@ -385,8 +390,80 @@ class MessageHandlerImpl(
         val sendMessage = SendMessage()
         val operatorChatId = message.from.id
         sendMessage.chatId = operatorChatId.toString()
+        sessionRepository.findByOperatorChatIdAndActiveTrue(operatorChatId)?.let {
+            val chatId = it.user.chatId
+            val sendMessage1 = SendMessage()
+            sendMessage1.chatId = chatId.toString()
+            val user = it.user
+            user.state = BEFORE_SEND_QUESTION
+            userRepository.save(user)
+
+            when (it.chatLanguage) {
+                LanguageEnum.Uzbek -> {
+                    sendMessage1.text = "Suhbat yakunlandi !"
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
+
+                    row.add(SEND_QUESTION_UZ)
+                    row.add(SETTING_UZ)
+
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage1.replyMarkup = keyboardMarkup
+
+                    sender.execute(sendMessage1)
+
+                }
+
+                LanguageEnum.English -> {
+                    sendMessage1.text = "Suhbat yakunlandi !"
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
+
+                    row.add(SEND_QUESTION_EN)
+                    row.add(SETTING_EN)
+
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage1.replyMarkup = keyboardMarkup
+
+                    sender.execute(sendMessage1)
+                }
+
+                LanguageEnum.Russian -> {
+                    sendMessage1.text = "Suhbat yakunlandi !"
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
+
+                    row.add(SEND_QUESTION_RU)
+                    row.add(SETTING_RU)
+
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage1.replyMarkup = keyboardMarkup
+
+                    sender.execute(sendMessage1)
+                }
+            }
+        }
 
         val list = userService.closeSession(operatorChatId)
+
         if (list != null) {
             temp = true
             for (i in 0..list.size - 2) {
@@ -412,14 +489,18 @@ class MessageHandlerImpl(
     }
 
     private fun sendAnswer(message: Message, sender: AbsSender) {
-//        val sendMessage = SendMessage()
-//        val dto = OperatorMessageDto(message.text, message.from.id, null)
-////        val sessions = messageService.operatorWriteMsg(dto)
-//////        val question = messageRepository.findByTelegramMessageId(message.messageId)
-//
-//        sendMessage.chatId = sessions.user.chatId.toString()
-//        sendMessage.text = message.text
-//        sender.execute(sendMessage)
+        val sendMessage = SendMessage()
+
+        val dto = messageService.operatorWriteMsg(
+            OperatorMessageDto(
+                message.text,
+                message.from.id,
+                null
+            )
+        )
+        sendMessage.chatId = dto.userChatId.toString()
+        sendMessage.text = message.text
+        sender.execute(sendMessage)
 
     }
 
@@ -509,7 +590,7 @@ class MessageHandlerImpl(
                 val row = KeyboardRow()
                 val row1 = KeyboardRow()
 
-                row.add(SEND_QUESTION_UZ)
+                row.add(SEND_QUESTION_RU)
                 row.add(SETTING_RU)
 
                 keyboard.add(row)
@@ -526,7 +607,7 @@ class MessageHandlerImpl(
                 val row = KeyboardRow()
                 val row1 = KeyboardRow()
 
-                row.add(SEND_QUESTION_UZ)
+                row.add(SEND_QUESTION_EN)
                 row.add(SETTING_EN)
 
                 keyboard.add(row)
@@ -589,7 +670,7 @@ class MessageHandlerImpl(
                             secondQuestion(message, sender)
                         }
 
-                        OperatorState.BUSY.name -> {
+                        SEND_ANSWER -> {
                             sendAnswer(message, sender)
                         }
 

@@ -72,7 +72,7 @@ interface SessionRepository : BaseRepository<Sessions> {
 
 
     @Query(value = "select s from Sessions s where s.chatLanguage = :language and s.operator = null and s.active = true")
-    fun getSession(@Param("language") languages: LanguageEnum): Sessions?
+    fun getSession(@Param("language") languages: LanguageEnum): List<Sessions>
     fun findByOperatorAndActiveTrue(operator: Users): Sessions?
 }
 
