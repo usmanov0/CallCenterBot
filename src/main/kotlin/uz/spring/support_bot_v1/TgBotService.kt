@@ -424,65 +424,25 @@ class MessageHandlerImpl(
 
     }
 
-    private fun back(message: Message, sender: AbsSender) {
-        val registerUser = registerUser(message.from)
-        return when (registerUser.state) {
-            SHARE_CONTACT, SEND_QUESTION -> start(message, sender)
-            else -> start(message, sender)
+    private fun getContact(message: Message, sender: AbsSender) {
+        val sendMessage = SendMessage()
+        val phone: String = if (message.hasContact())
+            message.contact.phoneNumber
+        else {
+            message.text
         }
-    }
+        val registerUser = registerUser(message.from)
+        val language1 = registerUser.language!!
+        sendMessage.chatId = message.from.id.toString()
 
-    override fun handle(message: Message, sender: AbsSender) {
-        val telegramUser = message.from
-        val chatId = telegramUser.id.toString()
-
-        val sendMessage = SendMessage()   // chatId  text
-        sendMessage.enableHtml(true)
-        sendMessage.chatId = chatId
-
-
-        if (message.hasText()) {
-            when (message.text) {
-
-                START -> start(message, sender)
-
-                UZBEK_, RUSSIAN_, ENGLISH_ -> chooseLanguage(message, sender)
-
-                BACK_UZ, BACK_RU, BACK_EN -> back(message, sender)
-
-
-                ONLINE_UZ, ONLINE_RU -> getQuestions(message, sender)
-
-                else -> {
-                    val registerUser = registerUser(message.from)
-                    when (registerUser.state) {
-                        SEND_QUESTION -> {
-                            handleQuestion(message)
-                        }
-
-                        OperatorState.BUSY.name -> {
-                            sendAnswer(message, sender)
-                        }
-
-                        else -> {
-                            sendMessage.chatId = registerUser.chatId.toString()
-                            sendMessage.text = "botni qayta ishga tushirish uchun /start tugmasini bosing"
-                            sender.execute(sendMessage)
-                        }
-                    }
-                }
-            }
-
-        } else if (message.hasContact()) {
-
-            val phone = message.contact.phoneNumber
-            val registerUser = registerUser(message.from)
+        val regex = Regex("^\\+998\\d{9}$")
+        val matches = regex.matches(phone)
+        if (matches) {
 
             registerUser.state = SEND_QUESTION
-            registerUser.phone = phone.toString()
+            registerUser.phone = phone
             userRepository.save(registerUser)
 
-            val language1 = registerUser.language!!
 
             when (language1.toString()) {
                 UZBEK -> {
@@ -528,6 +488,80 @@ class MessageHandlerImpl(
                 }
             }
             sender.execute(sendMessage)
+
+        } else {
+            when (registerUser.language) {
+                LanguageEnum.Uzbek -> sendMessage.text = "Telefoninggizni ushbu ko'rinishda kiriting 998901234567"
+                LanguageEnum.English -> sendMessage.text = "Enter your phone in this view 998901234567"
+                LanguageEnum.Russian -> sendMessage.text = "Введите свой телефон в этом представлении 998901234567"
+                else -> {}
+            }
+            sender.execute(sendMessage)
+        }
+
+    }
+
+    private fun back(message: Message, sender: AbsSender) {
+        val registerUser = registerUser(message.from)
+        return when (registerUser.state) {
+            SHARE_CONTACT, SEND_QUESTION -> start(message, sender)
+            else -> start(message, sender)
+        }
+    }
+
+    override fun handle(message: Message, sender: AbsSender) {
+        val telegramUser = message.from
+        val chatId = telegramUser.id.toString()
+
+        val sendMessage = SendMessage()   // chatId  text
+        sendMessage.enableHtml(true)
+        sendMessage.chatId = chatId
+
+
+        if (message.hasText()) {
+            when (message.text) {
+
+                START -> start(message, sender)
+
+                UZBEK_, RUSSIAN_, ENGLISH_ -> chooseLanguage(message, sender)
+
+                BACK_UZ, BACK_RU, BACK_EN -> back(message, sender)
+
+
+                ONLINE_UZ, ONLINE_RU -> getQuestions(message, sender)
+
+                else -> {
+                    val registerUser = registerUser(message.from)
+                    when (registerUser.state) {
+                        SEND_QUESTION -> {
+                            handleQuestion(message)
+                        }
+
+                        OperatorState.BUSY.name -> {
+                            sendAnswer(message, sender)
+                        }
+
+                        SHARE_CONTACT -> getContact(message, sender)
+
+                        else -> {
+                            sendMessage.chatId = registerUser.chatId.toString()
+                            sendMessage.text = "botni qayta ishga tushirish uchun /start tugmasini bosing"
+                            sender.execute(sendMessage)
+                        }
+                    }
+                }
+            }
+
+        } else if (message.hasContact()) {
+            val registerUser = registerUser(message.from)
+
+            if (registerUser.language == null) {
+                sendMessage.chatId = registerUser.chatId.toString()
+                sendMessage.text = "botni qayta ishga tushirish uchun /start tugmasini bosing"
+                sender.execute(sendMessage)
+            } else {
+                getContact(message, sender)
+            }
         }
     }
 }

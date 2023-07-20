@@ -24,7 +24,7 @@ interface UserService {
 
 interface MessageService {
     fun userWriteMsg(dto: UserMessageDto)
-    fun operatorWriteMsg(dto: OperatorMessageDto) : Sessions
+    fun operatorWriteMsg(dto: OperatorMessageDto): Sessions
     fun findById(id: Long): MessageReplyDto
     fun getAll(pageable: Pageable): Page<MessageReplyDto>
     fun getAllMessagesNotRepliedByLanguage(operatorId: Long): List<QuestionsForOperatorDto>
@@ -60,7 +60,7 @@ interface TimeTableService {
     fun operatorFinish(operatorId: Long)
 }
 
-interface OperatorLanguageService{
+interface OperatorLanguageService {
     fun create(dto: OperatorLanguageDto)
 }
 
@@ -99,6 +99,7 @@ class UserServiceImpl(private val userRepository: UserRepository) : UserService 
         userRepository.save(operator)
     }
 }
+
 @Service
 class MessageServiceImpl(
     private val messageRepository: MessageRepository,
@@ -116,10 +117,10 @@ class MessageServiceImpl(
     }
 
     @Transactional
-    override fun operatorWriteMsg(dto: OperatorMessageDto) : Sessions {
+    override fun operatorWriteMsg(dto: OperatorMessageDto): Sessions {
         userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId)?.let {
             val session = sessionRepository.findByOperatorChatIdAndActiveTrue(dto.operatorChatId)
-            val message = Messages(MessageType.ANSWER, dto.body, true, null, session!!.chatLanguage, session.user, session)
+            val message = Messages(MessageType.ANSWER, dto.body, true, session!!.chatLanguage, session.user, session)
             messageRepository.save(message)
             //            dto.run {
 //                val message = messageRepository.findByIdAndDeletedFalse(replyMessageId) ?: throw RuntimeException()
@@ -135,8 +136,7 @@ class MessageServiceImpl(
 //                    messageRepository.save(it)
 //                }
 //            }
-            return session ?:
-                throw RuntimeException()
+            return session
         } ?: throw RuntimeException()
     }
 
@@ -260,6 +260,7 @@ class LanguageServiceImpl(
             }
         }
     }
+
     override fun getAll(pageable: Pageable) =
         languageRepository.findAllNotDeleted(pageable).map { GetOneLanguageDto.toDto(it) }
 
@@ -281,8 +282,11 @@ class OperatorLanguageServiceImp(
 ) : OperatorLanguageService {
 
     override fun create(dto: OperatorLanguageDto) {
-        val operator = userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId) ?: throw OperatorNotFoundException(dto.operatorChatId)
-        val languages = languageRepository.findByIdAndDeletedFalse(dto.languageId) ?: throw LanguageNotFoundException(dto.languageId)
+        val operator = userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId)
+            ?: throw OperatorNotFoundException(dto.operatorChatId)
+        val languages = languageRepository.findByIdAndDeletedFalse(dto.languageId) ?: throw LanguageNotFoundException(
+            dto.languageId
+        )
         repository.save(OperatorsLanguages(languages, operator))
     }
 }
