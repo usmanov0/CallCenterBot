@@ -10,7 +10,7 @@ spring:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/demo_db
     username: postgres
-    password: 7475
+    password: root777
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
@@ -23,5 +23,5 @@ spring:
     hibernate:
       naming:
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
