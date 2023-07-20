@@ -74,6 +74,9 @@ interface SessionRepository : BaseRepository<Sessions> {
     @Query(value = "select s from Sessions s where s.chatLanguage = :language and s.operator = null and s.active = true")
     fun getSession(@Param("language") languages: LanguageEnum): List<Sessions>
     fun findByOperatorAndActiveTrue(operator: Users): Sessions?
+
+    // Every session has non-null rate for finished ones, and null rate for active ones
+    fun findByUserChatIdAndRateNull(userChatId: Long): Sessions?
 }
 
 interface MessageRepository : BaseRepository<Messages> {

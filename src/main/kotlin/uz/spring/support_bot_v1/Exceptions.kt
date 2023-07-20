@@ -40,3 +40,8 @@ class LanguageNotFoundException(val id: Long) : DemoException() {
 class LanguageExistsException(val name: String) : DemoException() {
     override fun errorType() = ErrorCode.LANGUAGE_ALREADY_EXISTS
 }
+
+class SessionNotFoundException(userChatId: Long) : DemoException() {
+    override fun errorType(): ErrorCode = ErrorCode.SESSION_NOT_FOUND
+
+}

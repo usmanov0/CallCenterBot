@@ -511,6 +511,14 @@ class MessageHandlerImpl(
         sender.execute(sendMessage)
     }
 
+     fun sendResponse(userChatId: Long, dto: MessageReplyDto, sender: AbsSender) {
+        val sendMessage = SendMessage()
+
+        sendMessage.chatId = userChatId.toString()
+        sendMessage.text = dto.body
+        sender.execute(sendMessage)
+    }
+
     private fun sendAnswer(message: Message, sender: AbsSender) {
         val sendMessage = SendMessage()
 
