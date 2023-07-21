@@ -95,3 +95,7 @@ interface OperatorsLanguagesRepository : BaseRepository<OperatorsLanguages> {
     )
     fun getAllLanguagesByOperatorId(operatorId: Long): List<Languages>
 }
+
+interface FileRepository : BaseRepository<FileEntity> {
+    fun findByMessagesId(messageId: Long): FileEntity
+}

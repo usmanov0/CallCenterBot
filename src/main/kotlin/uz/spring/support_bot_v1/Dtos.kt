@@ -47,13 +47,9 @@ data class UserDto(
 
 
 data class MessageReplyDto(
-    val body: String,
-    val createdDate: Date
-) {
-    companion object {
-        fun toDto(message: Messages) = message.run { MessageReplyDto(body, createdDate!!) }
-    }
-}
+    val body: String?,
+    val fileDto: FileResponseDto?
+)
 
 data class UserMessageDto(
     val body: String,
@@ -67,7 +63,28 @@ data class UserMessageDto(
             false,
             LanguageEnum.valueOf(userLanguage),
             user,
-            session
+            session,
+            FileType.TEXT
+        )
+}
+
+data class UserFileDto(
+    val fileName: String,
+    val caption: String?,
+    val contentType: ContentType,
+    val userChatId: Long,
+    val userLanguage: String,
+    val content: ByteArray
+) {
+    fun toEntity(user: Users, session: Sessions?) =
+        Messages(
+            MessageType.QUESTION,
+            fileName,
+            false,
+            LanguageEnum.valueOf(userLanguage),
+            user,
+            session,
+            FileType.FILE
         )
 }
 
@@ -83,20 +100,20 @@ data class OperatorMessageDto(
             true,
             message.messageLanguage,
             operator,
-            session
+            session,
+            FileType.TEXT
         )
 }
 
 data class QuestionsForOperatorDto(
     val messageId: Long,
-    val body: String,
+    val body: String?,
     val msgLanguage: String
 ) {
     companion object {
         fun toDto(message: Messages) = message.run { QuestionsForOperatorDto(id!!, body, messageLanguage.name) }
     }
 }
-
 
 
 data class LanguageDto(
@@ -159,3 +176,96 @@ data class OperatorLanguageDto(
     val operatorChatId: Long,
     val languageId: Long
 )
+
+data class FileCreateDto(
+    var fileName: String,
+    var path: String,
+    var contentType: ContentType,
+    var content: ByteArray
+
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as FileCreateDto
+
+        if (fileName != other.fileName) return false
+        if (path != other.path) return false
+        if (contentType != other.contentType) return false
+        if (!content.contentEquals(other.content)) return false
+
+        return true
+    }
+    override fun hashCode(): Int {
+        var result = fileName.hashCode()
+        result = 31 * result + path.hashCode()
+        result = 31 * result + contentType.hashCode()
+        result = 31 * result + content.contentHashCode()
+        return result
+    }
+}
+
+data class OperatorFileDto(
+    val fileName: String,
+    val caption: String?,
+    val contentType: ContentType,
+    val operatorChatId: Long,
+    val content: ByteArray?,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as OperatorFileDto
+
+        if (fileName != other.fileName) return false
+        if (caption != other.caption) return false
+        if (contentType != other.contentType) return false
+        if (operatorChatId != other.operatorChatId) return false
+        if (!content.contentEquals(other.content)) return false
+
+        return true
+    }
+    override fun hashCode(): Int {
+        var result = fileName.hashCode()
+        result = 31 * result + (caption?.hashCode() ?: 0)
+        result = 31 * result + contentType.hashCode()
+        result = 31 * result + operatorChatId.hashCode()
+        result = 31 * result + content.contentHashCode()
+        return result
+    }
+}
+
+data class FileResponseDto(
+    var fileName: String,
+    var path: String,
+    var contentType: ContentType,
+    var content: ByteArray,
+
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as FileResponseDto
+
+        if (fileName != other.fileName) return false
+        if (path != other.path) return false
+        if (contentType != other.contentType) return false
+        if (!content.contentEquals(other.content)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = fileName.hashCode()
+        result = 31 * result + path.hashCode()
+        result = 31 * result + contentType.hashCode()
+        result = 31 * result + content.contentHashCode()
+        return result
+    }
+
+}
+
+

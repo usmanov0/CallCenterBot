@@ -43,7 +43,7 @@ class Sessions(
 class Messages(
     @Enumerated(EnumType.STRING)
     var type: MessageType,
-    var body: String,
+    var body: String?,
     var replied: Boolean,
     @Enumerated(EnumType.STRING)
     var messageLanguage: LanguageEnum,
@@ -51,6 +51,8 @@ class Messages(
     var user: Users,
     @ManyToOne
     var session: Sessions?,
+    @Enumerated(EnumType.STRING)
+    var fileType: FileType,
 ) : BaseEntity()
 
 @Entity
@@ -63,4 +65,12 @@ class Languages(
 class OperatorsLanguages(
     @ManyToOne var language: Languages,
     @ManyToOne var operator: Users
+) : BaseEntity()
+
+@Entity
+class FileEntity(
+    var fileName: String,
+    var path: String,
+    @Enumerated(value = EnumType.STRING) var contentType: ContentType,
+    @OneToOne var messages: Messages
 ) : BaseEntity()

@@ -21,6 +21,21 @@ enum class ErrorCode(val code: Int) {
     LANGUAGE_ALREADY_EXISTS(105),
     LANGUAGE_NOT_FOUND(106)
 }
-enum class OperatorState(){
-    BUSY,NOT_BUSY
+
+enum class OperatorState() {
+    BUSY, NOT_BUSY
+}
+
+enum class FileType() {
+    FILE, TEXT
+}
+
+enum class ContentType{
+    PHOTO,
+    VIDEO,
+    VIDEO_NOTE,
+    MUSIC,
+    DOCUMENT,
+    ANIMATION,
+    GIFT
 }

@@ -1,8 +1,14 @@
 package uz.spring.support_bot_v1
 
 import org.springframework.stereotype.Service
+import org.springframework.web.client.RestTemplate
+import org.springframework.web.client.getForObject
+import org.telegram.telegrambots.meta.api.methods.GetFile
+import org.telegram.telegrambots.meta.api.methods.send.SendAnimation
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
+import org.telegram.telegrambots.meta.api.objects.InputFile
 import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
@@ -10,6 +16,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRem
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
 import org.telegram.telegrambots.meta.bots.AbsSender
+import java.io.File
 
 interface MessageHandler {
     fun handle(message: Message, sender: AbsSender)
@@ -236,49 +243,19 @@ class MessageHandlerImpl(
             UZBEK -> {
                 sendMessage.text = SEND_QUESTION_TRUE_UZ
 
-                /*val keyboardMarkup = ReplyKeyboardMarkup()
-                val keyboard: MutableList<KeyboardRow> = ArrayList()
-                val row1 = KeyboardRow()
-
-                row1.add(BACK_UZ)
-
-                keyboard.add(row1)
-                keyboardMarkup.keyboard = keyboard
-                keyboardMarkup.resizeKeyboard = true
-                sendMessage.replyMarkup = keyboardMarkup*/
                 sendMessage.replyMarkup = ReplyKeyboardRemove(true)
 
             }
 
             RUSSIAN -> {
                 sendMessage.text = SEND_QUESTION_TRUE_RU
-                /* val keyboardMarkup = ReplyKeyboardMarkup()
-                 val keyboard: MutableList<KeyboardRow> = ArrayList()
-                 val row1 = KeyboardRow()
-
-                 row1.add(BACK_RU)
-
-                 keyboard.add(row1)
-                 keyboardMarkup.keyboard = keyboard
-                 keyboardMarkup.resizeKeyboard = true
-                 sendMessage.replyMarkup = keyboardMarkup*/
                 sendMessage.replyMarkup = ReplyKeyboardRemove(true)
 
             }
 
             ENGLISH -> {
                 sendMessage.text = SEND_QUESTION_TRUE_EN
-                /*val keyboardMarkup = ReplyKeyboardMarkup()
-                val keyboard: MutableList<KeyboardRow> = ArrayList()
-                val row1 = KeyboardRow()
 
-                row1.add(BACK_EN)
-
-                keyboard.add(row1)
-                keyboardMarkup.keyboard = keyboard
-                keyboardMarkup.resizeKeyboard = true
-                sendMessage.replyMarkup = keyboardMarkup
-*/
                 sendMessage.replyMarkup = ReplyKeyboardRemove(true)
             }
         }
@@ -286,64 +263,110 @@ class MessageHandlerImpl(
     }
 
     private fun secondQuestion(message: Message, sender: AbsSender) {
-        val sendMessage = SendMessage()
 
         val registerUser = registerUser(message.from)
-
         val language1 = registerUser.language!!  //   [Russian]
 
-        when (language1.toString()) {
-            UZBEK -> {
-                val userWriteMsg = messageService.userWriteMsg(
-                    UserMessageDto(
-                        message.text,
-                        registerUser.chatId,
-                        registerUser.language!!.name
+        if (message.hasText()) {
+            val sendMessage = SendMessage()
+            when (language1.toString()) {
+                UZBEK -> {
+                    val userWriteMsg = messageService.userWriteMsg(
+                        UserMessageDto(
+                            message.text,
+                            registerUser.chatId,
+                            registerUser.language!!.name
+                        )
                     )
-                )
-                if (userWriteMsg != null) {
-                    val operatorChatId = userWriteMsg.operatorChatId
-                    sendMessage.chatId = operatorChatId.toString()
-                    sendMessage.text = message.text
-//                    sendMessage.replyMarkup = ReplyKeyboardRemove(true)
-                    sender.execute(sendMessage)
+                    if (userWriteMsg != null) {
+                        val operatorChatId = userWriteMsg.operatorChatId
+                        sendMessage.chatId = operatorChatId.toString()
+                        sendMessage.text = message.text
+                        sender.execute(sendMessage)
+                    }
                 }
-            }
 
-            RUSSIAN -> {
-                val userWriteMsg = messageService.userWriteMsg(
-                    UserMessageDto(
-                        message.text,
-                        registerUser.chatId,
-                        registerUser.language!!.name
+                RUSSIAN -> {
+                    val userWriteMsg = messageService.userWriteMsg(
+                        UserMessageDto(
+                            message.text,
+                            registerUser.chatId,
+                            registerUser.language!!.name
+                        )
                     )
-                )
-                if (userWriteMsg != null) {
-                    val operatorChatId = userWriteMsg.operatorChatId
-                    sendMessage.chatId = operatorChatId.toString()
-                    sendMessage.text = message.text
-//                    sendMessage.replyMarkup = ReplyKeyboardRemove(true)
-                    sender.execute(sendMessage)
+                    if (userWriteMsg != null) {
+                        val operatorChatId = userWriteMsg.operatorChatId
+                        sendMessage.chatId = operatorChatId.toString()
+                        sendMessage.text = message.text
+                        sender.execute(sendMessage)
+                    }
                 }
-            }
 
-            ENGLISH -> {
-                val userWriteMsg = messageService.userWriteMsg(
-                    UserMessageDto(
-                        message.text,
-                        registerUser.chatId,
-                        registerUser.language!!.name
+                ENGLISH -> {
+                    val userWriteMsg = messageService.userWriteMsg(
+                        UserMessageDto(
+                            message.text,
+                            registerUser.chatId,
+                            registerUser.language!!.name
+                        )
                     )
-                )
-                if (userWriteMsg != null) {
-                    val operatorChatId = userWriteMsg.operatorChatId
-                    sendMessage.chatId = operatorChatId.toString()
-                    sendMessage.text = message.text
-//                    sendMessage.replyMarkup = ReplyKeyboardRemove(true)
-                    sender.execute(sendMessage)
+                    if (userWriteMsg != null) {
+                        val operatorChatId = userWriteMsg.operatorChatId
+                        sendMessage.chatId = operatorChatId.toString()
+                        sendMessage.text = message.text
+                        sender.execute(sendMessage)
+                    }
                 }
+
             }
         }
+        if (message.hasAnimation()) {
+            val sendAnimation = SendAnimation()
+            val animation = message.animation
+
+            val content = getFromTelegram(animation.fileId, sender)
+
+            val fileDto = messageService.userWriteFile(
+                UserFileDto(
+                    "${animation.fileUniqueId}.gif",
+                    null,
+                    ContentType.ANIMATION,
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+//                sendAnimation.chatId = fileDto.operatorChatId.toString()
+//                val inputFile = InputFile(basePath + "\\" + fileDto.fileName)
+//                sendAnimation.animation = inputFile
+                val sendAnimation = SendAnimation(fileDto.operatorChatId.toString(), InputFile(File(basePath + "\\" + fileDto.fileName)))
+                sender.execute(sendAnimation)
+            }
+
+
+        } else if (message.hasAudio()) {
+//            val sendMessage:SendMessage()
+
+        } else if (message.hasDocument()) {
+
+        } else if (message.hasPhoto()) {
+            val sendPhoto = SendPhoto()
+            sendPhoto.chatId = "341330802"
+            val inputFile = InputFile("C:\\Users\\humoy\\IdeaProjects\\kotlin\\support_bot_v1\\files\\3.2.png")
+
+            sendPhoto.photo = inputFile
+            sender.execute(sendPhoto)
+
+        } else if (message.hasVideo()) {
+
+        } else if (message.hasVideoNote()) {
+
+        } else if (message.hasVoice()) {
+
+        }
+
+
     }
 
     private fun getQuestions(message: Message, sender: AbsSender) {
@@ -361,10 +384,10 @@ class MessageHandlerImpl(
         if (list != null) {
             temp = true
             for (i in 0..list.size - 2) {
-                sendMessage.text = list[i].body
+                sendMessage.text = list[i].body!!
                 sender.execute(sendMessage)
             }
-            sendMessage.text = list[list.size - 1].body
+            sendMessage.text = list[list.size - 1].body!!
         }
         if (!temp)
             sendMessage.text = "Sizda hozircha habar yoq"
@@ -467,10 +490,10 @@ class MessageHandlerImpl(
         if (list != null) {
             temp = true
             for (i in 0..list.size - 2) {
-                sendMessage.text = list[i].body
+                sendMessage.text = list[i].body!!
                 sender.execute(sendMessage)
             }
-            sendMessage.text = list[list.size - 1].body
+            sendMessage.text = list[list.size - 1].body!!
         }
         if (!temp)
             sendMessage.text = "Hozircha habar yo'q"
@@ -633,6 +656,26 @@ class MessageHandlerImpl(
         }
     }
 
+//    private fun testVideoGolosFile(message: Message, sender: AbsSender) {
+//        if (message.hasAnimation()) {
+////            val sendAnimation:SendAnimation()
+////            sendAnimation
+//        }else if (message.hasAudio()){
+////            val sendMessage:SendMessage()
+//
+//        }else if (message.hasDocument()){
+//
+//        }else if (message.hasPhoto()){
+//
+//        }else if (message.hasVideo()){
+//
+//        }else if (message.hasVideoNote()){
+//
+//        }else if (message.hasVoice()){
+//
+//        }
+//    }
+
     override fun handle(message: Message, sender: AbsSender) {
         val telegramUser = message.from
         val chatId = telegramUser.id.toString()
@@ -662,6 +705,15 @@ class MessageHandlerImpl(
                 OFFLINE_SESSION -> closeChat(message, sender)
 
                 OFFLINE -> offline(message, sender)
+
+//                "/video" -> testVideoGolosFile(message, sender)
+
+                "/reply" -> {
+                    sendMessage.chatId = "341330802"
+                    sendMessage.text = "salom"
+                    sendMessage.replyToMessageId = 5764
+                    sender.execute(sendMessage)
+                }
 
                 else -> {
                     val registerUser = registerUser(message.from)
@@ -695,8 +747,19 @@ class MessageHandlerImpl(
             } else {
                 getContact(message, sender)
             }
+        } else if ((message.hasVoice() || message.hasVideoNote() || message.hasVideo() || message.hasPhoto() || message.hasDocument() || message.hasAudio() || message.hasAnimation()) && registerUser(
+                message.from
+            ).state == SEND_QUESTION
+        ) {
+            secondQuestion(message, sender)
         }
     }
+
+    fun getFromTelegram(fileId: String, sender: AbsSender) = sender.execute(GetFile(fileId)).run {
+        RestTemplate().getForObject<ByteArray>("https://api.telegram.org/file/bot${token1}/${filePath}")
+    }
+
+
 }
 
 @Service

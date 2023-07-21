@@ -1,12 +1,14 @@
 package uz.spring.support_bot_v1
 
-import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.util.Date
-import java.util.concurrent.TimeUnit
+
 
 interface UserService {
     //    fun create(tgUser: ):UserDto
@@ -30,12 +32,19 @@ interface UserService {
 
 interface MessageService {
     fun userWriteMsg(dto: UserMessageDto): OperatorMessageDto?
+    fun userWriteFile(dto: UserFileDto): OperatorFileDto?
     fun operatorWriteMsg(dto: OperatorMessageDto): UserMessageDto
-    fun findById(id: Long): MessageReplyDto
-    fun getAll(pageable: Pageable): Page<MessageReplyDto>
+//    fun findById(id: Long): MessageReplyDto
+//    fun getAll(pageable: Pageable): Page<MessageReplyDto>
     fun getAllMessagesNotRepliedByLanguage(operatorId: Long): List<QuestionsForOperatorDto>
-    fun getAllMessagesBySessionId(sessionId: Long): List<MessageReplyDto>
-    fun deliverMessage(userId: Long, messageId: Long): MessageReplyDto
+//    fun getAllMessagesBySessionId(sessionId: Long): List<MessageReplyDto>
+//    fun deliverMessage(userId: Long, messageId: Long): MessageReplyDto
+}
+
+interface FileService {
+    fun writeFile(fileCreateDto: FileCreateDto, messages: Messages)
+
+    fun readFile(fileName: String) : ByteArray
 }
 
 interface SessionService {
@@ -69,7 +78,9 @@ class UserServiceImpl(
     private val userRepository: UserRepository,
     private val sessionRepository: SessionRepository,
     private val messageRepository: MessageRepository,
-    private val operatorsLanguagesRepository: OperatorsLanguagesRepository
+    private val operatorsLanguagesRepository: OperatorsLanguagesRepository,
+    private val fileService: FileService,
+    private val fileRepository: FileRepository
 ) : UserService {
     /*   override fun create(dto: UserDto):UserDto {
            if (userRepository.findByChatIdAndDeletedFalse(dto.chatId) != null) throw UserAlreadyExistsException(dto.chatId)
@@ -109,7 +120,6 @@ class UserServiceImpl(
             operatorChatId
         )
         operator.isOnline = true
-        var messageList: List<MessageReplyDto>? = null
         val languages = operatorsLanguagesRepository.getAllLanguagesByOperatorId(operator.id!!)
         var sessions: Sessions? = null
 
@@ -125,10 +135,21 @@ class UserServiceImpl(
             sessionRepository.save(sessions)
             operator.operatorState = OperatorState.BUSY
             userRepository.save(operator)
-            messageList =
-                messageRepository.findBySessionIdOrderByCreatedDate(sessions.id).map { MessageReplyDto.toDto(it) }
+            val messageList =
+                messageRepository.findBySessionIdOrderByCreatedDate(sessions.id)
+            val messageResponseDtoList = mutableListOf<MessageReplyDto>()
+            for (message in messageList) {
+                if (message.fileType == FileType.FILE) {
+                    val fileEntity = fileRepository.findByMessagesId(message.id!!)
+                    val content = fileService.readFile(fileEntity.fileName)
+                    messageResponseDtoList.add(MessageReplyDto(message.body, FileResponseDto(fileEntity.fileName, basePath, fileEntity.contentType, content)))
+                }else {
+                    messageResponseDtoList.add(MessageReplyDto(message.body, null))
+                }
+            }
+            return messageResponseDtoList
         }
-        return messageList
+        return null
     }
 
     override fun closeSession(operatorChatId: Long): List<MessageReplyDto>? {
@@ -165,7 +186,8 @@ class MessageServiceImpl(
     private val messageRepository: MessageRepository,
     private val userRepository: UserRepository,
     private val sessionRepository: SessionRepository,
-    private val operatorsLanguagesRepository: OperatorsLanguagesRepository
+    private val operatorsLanguagesRepository: OperatorsLanguagesRepository,
+    private val fileService: FileService
 ) : MessageService {
     override fun userWriteMsg(dto: UserMessageDto): OperatorMessageDto? {
         userRepository.findByChatIdAndDeletedFalse(dto.userChatId)?.let {
@@ -189,9 +211,33 @@ class MessageServiceImpl(
                 operatorMessageDto = OperatorMessageDto(dto.body, sessions.operator!!.chatId, null)
             }
             val message =
-                Messages(MessageType.QUESTION, dto.body, false, LanguageEnum.valueOf(dto.userLanguage), it, sessions)
+                Messages(MessageType.QUESTION, dto.body, false, LanguageEnum.valueOf(dto.userLanguage), it, sessions,FileType.TEXT)
             messageRepository.save(message)
             return operatorMessageDto
+        } ?: throw UserNotFoundException(dto.userChatId)
+    }
+
+    override fun userWriteFile(dto: UserFileDto): OperatorFileDto? {
+        userRepository.findByChatIdAndDeletedFalse(dto.userChatId)?.let {user ->
+            var sessions =  sessionRepository.findByUserChatIdAndActiveTrue(dto.userChatId)
+            var operatorFileDto : OperatorFileDto? = null
+            if (sessions == null) {
+                val newSession = Sessions(user, null, LanguageEnum.valueOf(dto.userLanguage), Date(), null, null, true)
+                val operator = userRepository.getOperator(Role.OPERATOR, OperatorState.NOT_BUSY, LanguageEnum.valueOf(dto.userLanguage))
+                if (operator != null) {
+                    operator.operatorState = OperatorState.BUSY
+                    userRepository.save(operator)
+                    newSession.operator = operator
+                    operatorFileDto = OperatorFileDto(dto.fileName, dto.caption, dto.contentType, operator.chatId,fileService.readFile(dto.fileName))
+                }
+                sessions =  sessionRepository.save(newSession)
+            } else if (sessions.operator != null) {
+                operatorFileDto = OperatorFileDto(dto.fileName, dto.caption, dto.contentType, sessions.operator!!.chatId, null)
+            }
+            var message = Messages(MessageType.QUESTION, dto.caption, false, LanguageEnum.valueOf(dto.userLanguage), user, sessions, FileType.FILE )
+            message = messageRepository.save(message)
+            fileService.writeFile(FileCreateDto(dto.fileName, basePath, dto.contentType, dto.content), message)
+            return operatorFileDto
         } ?: throw UserNotFoundException(dto.userChatId)
     }
 
@@ -199,19 +245,19 @@ class MessageServiceImpl(
     override fun operatorWriteMsg(dto: OperatorMessageDto): UserMessageDto {
         userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId)?.let { operator ->
             val session = sessionRepository.findByOperatorChatIdAndActiveTrue(dto.operatorChatId)
-            val message = Messages(MessageType.ANSWER, dto.body, false, session!!.chatLanguage, session.user, session)
+            val message = Messages(MessageType.ANSWER, dto.body, false, session!!.chatLanguage, session.user, session,FileType.TEXT)
             messageRepository.save(message)
             val userMessageDto = UserMessageDto(dto.body, session.user.chatId, session.chatLanguage.name)
             return userMessageDto
         } ?: throw RuntimeException()
     }
 
-    override fun findById(id: Long): MessageReplyDto =
-        messageRepository.findByIdAndDeletedFalse(id)?.let { MessageReplyDto.toDto(it) }
-            ?: throw RuntimeException()
-
-    override fun getAll(pageable: Pageable): Page<MessageReplyDto> =
-        messageRepository.findAllNotDeleted(pageable).map { MessageReplyDto.toDto(it) }
+//    override fun findById(id: Long): MessageReplyDto =
+//        messageRepository.findByIdAndDeletedFalse(id)?.let { MessageReplyDto.toDto(it) }
+//            ?: throw RuntimeException()
+//
+//    override fun getAll(pageable: Pageable): Page<MessageReplyDto> =
+//        messageRepository.findAllNotDeleted(pageable).map { MessageReplyDto.toDto(it) }
 
     override fun getAllMessagesNotRepliedByLanguage(operatorId: Long): List<QuestionsForOperatorDto> {
         val user = userRepository.findByChatIdAndDeletedFalse(operatorId) ?: throw RuntimeException()
@@ -245,14 +291,14 @@ class MessageServiceImpl(
         return baseList.map { QuestionsForOperatorDto.toDto(it) }
     }
 
-    override fun getAllMessagesBySessionId(sessionId: Long): List<MessageReplyDto> =
-        messageRepository.findAllBySessionId(sessionId).map { MessageReplyDto.toDto(it) }
-
-    override fun deliverMessage(userId: Long, messageId: Long): MessageReplyDto {
-        userRepository.findByChatIdAndDeletedFalse(userId) ?: throw UserNotFoundException(userId)
-        return messageRepository.findByIdAndDeletedFalse(messageId)?.run { MessageReplyDto(body, createdDate!!) }
-            ?: throw MessageNotFoundException(messageId)
-    }
+//    override fun getAllMessagesBySessionId(sessionId: Long): List<MessageReplyDto> =
+//        messageRepository.findAllBySessionId(sessionId).map { MessageReplyDto.toDto(it) }
+//
+//    override fun deliverMessage(userId: Long, messageId: Long): MessageReplyDto {
+//        userRepository.findByChatIdAndDeletedFalse(userId) ?: throw UserNotFoundException(userId)
+//        return messageRepository.findByIdAndDeletedFalse(messageId)?.run { MessageReplyDto(body, createdDate!!) }
+//            ?: throw MessageNotFoundException(messageId)
+//    }
 }
 
 @Service
@@ -313,5 +359,27 @@ class OperatorLanguageServiceImp(
             dto.languageId
         )
         repository.save(OperatorsLanguages(languages, operator))
+    }
+}
+
+@Service
+class FileServiceImp(
+    private val fileRepository: FileRepository
+): FileService {
+
+    override fun writeFile(fileCreateDto: FileCreateDto, messages: Messages) {
+        val file = FileEntity(fileCreateDto.fileName, basePath, fileCreateDto.contentType, messages)
+        fileRepository.save(file)
+        val outputStream = FileOutputStream(File(basePath + "\\" + fileCreateDto.fileName))
+        outputStream.write(fileCreateDto.content)
+        outputStream.close()
+    }
+
+
+    override fun readFile(fileName: String): ByteArray {
+        val inputStream = FileInputStream(File(basePath + "\\" + fileName))
+        val bytes = inputStream.readAllBytes()
+        inputStream.close()
+        return bytes
     }
 }
