@@ -11,7 +11,6 @@ import java.util.Date
 
 
 interface UserService {
-    //    fun create(tgUser: ):UserDto
     fun findById(id: Long): UserDto
     fun getAll(pageable: Pageable): Page<UserDto>
 
@@ -35,11 +34,9 @@ interface MessageService {
     fun userWriteFile(dto: UserFileDto): OperatorFileDto?
     fun operatorWriteMsg(dto: OperatorMessageDto): UserMessageDto
     fun operatorWriteFile(dot: UserFileDto): OperatorFileDto?
-//    fun findById(id: Long): MessageReplyDto
-//    fun getAll(pageable: Pageable): Page<MessageReplyDto>
+
     fun getAllMessagesNotRepliedByLanguage(operatorId: Long): List<QuestionsForOperatorDto>
-//    fun getAllMessagesBySessionId(sessionId: Long): List<MessageReplyDto>
-//    fun deliverMessage(userId: Long, messageId: Long): MessageReplyDto
+
 }
 
 interface FileService {
@@ -76,10 +73,6 @@ class UserServiceImpl(
     private val fileService: FileService,
     private val fileRepository: FileRepository
 ) : UserService {
-    /*   override fun create(dto: UserDto):UserDto {
-           if (userRepository.findByChatIdAndDeletedFalse(dto.chatId) != null) throw UserAlreadyExistsException(dto.chatId)
-           dto.run { userRepository.save(toEntity()) }
-       }*/
 
     override fun findById(id: Long) = userRepository.findByChatIdAndDeletedFalse(id)?.let { UserDto.toDto(it) }
         ?: throw UserNotFoundException(id)
@@ -114,6 +107,8 @@ class UserServiceImpl(
             operatorChatId
         )
         operator.isOnline = true
+        operator.operatorState = OperatorState.NOT_BUSY
+        userRepository.save(operator)
         val languages = operatorsLanguagesRepository.getAllLanguagesByOperatorId(operator.id!!)
         var sessions: Sessions? = null
 
