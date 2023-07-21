@@ -209,8 +209,8 @@ data class FileCreateDto(
 data class OperatorFileDto(
     val fileName: String,
     val caption: String?,
+    val chatId: Long,
     val contentType: String,
-    val operatorChatId: Long,
     val content: ByteArray?,
 ) {
     override fun equals(other: Any?): Boolean {
@@ -222,8 +222,7 @@ data class OperatorFileDto(
         if (fileName != other.fileName) return false
         if (caption != other.caption) return false
         if (contentType != other.contentType) return false
-        if (operatorChatId != other.operatorChatId) return false
-        if (!content.contentEquals(other.content)) return false
+        if (chatId != other.chatId) return false
 
         return true
     }
@@ -231,8 +230,7 @@ data class OperatorFileDto(
         var result = fileName.hashCode()
         result = 31 * result + (caption?.hashCode() ?: 0)
         result = 31 * result + contentType.hashCode()
-        result = 31 * result + operatorChatId.hashCode()
-        result = 31 * result + content.contentHashCode()
+        result = 31 * result + chatId.hashCode()
         return result
     }
 }
