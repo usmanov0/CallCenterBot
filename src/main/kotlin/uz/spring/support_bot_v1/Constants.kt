@@ -5,7 +5,7 @@ const val ADMIN = "689214434"
 
 const val token1 = "6351549076:AAF7uGio6Aan17f4md_yA4fZmj6HjPTbRfg"
 const val username = "https://t.me/firstGroupSupportBot"
-const val basePath = "C:\\Users\\humoy\\IdeaProjects\\kotlin\\support_bot_v1\\files"
+const val basePath = "C:\\files"
 
 const val OPERATOR_CHAT_ID1: Long = 341330802
 const val OPERATOR_CHAT_ID2: Long = 975051915

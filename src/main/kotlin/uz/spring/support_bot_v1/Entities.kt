@@ -71,6 +71,6 @@ class OperatorsLanguages(
 class FileEntity(
     var fileName: String,
     var path: String,
-    @Enumerated(value = EnumType.STRING) var contentType: ContentType,
+    var contentType: String,
     @OneToOne var messages: Messages
 ) : BaseEntity()

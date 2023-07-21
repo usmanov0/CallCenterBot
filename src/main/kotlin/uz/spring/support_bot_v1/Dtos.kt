@@ -71,7 +71,7 @@ data class UserMessageDto(
 data class UserFileDto(
     val fileName: String,
     val caption: String?,
-    val contentType: ContentType,
+    val contentType: String,
     val userChatId: Long,
     val userLanguage: String,
     val content: ByteArray
@@ -180,7 +180,7 @@ data class OperatorLanguageDto(
 data class FileCreateDto(
     var fileName: String,
     var path: String,
-    var contentType: ContentType,
+    var contentType: String,
     var content: ByteArray
 
 ) {
@@ -209,7 +209,7 @@ data class FileCreateDto(
 data class OperatorFileDto(
     val fileName: String,
     val caption: String?,
-    val contentType: ContentType,
+    val contentType: String,
     val operatorChatId: Long,
     val content: ByteArray?,
 ) {
@@ -240,7 +240,7 @@ data class OperatorFileDto(
 data class FileResponseDto(
     var fileName: String,
     var path: String,
-    var contentType: ContentType,
+    var contentType: String,
     var content: ByteArray,
 
 ) {
