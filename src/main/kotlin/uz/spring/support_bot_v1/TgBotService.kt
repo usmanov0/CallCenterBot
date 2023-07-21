@@ -340,7 +340,7 @@ class MessageHandlerImpl(
 //                sendAnimation.chatId = fileDto.operatorChatId.toString()
 //                val inputFile = InputFile(basePath + "\\" + fileDto.fileName)
 //                sendAnimation.animation = inputFile
-                val sendAnimation = SendAnimation(fileDto.operatorChatId.toString(), InputFile(File(basePath + "\\" + fileDto.fileName)))
+                val sendAnimation = SendAnimation(fileDto.chatId.toString(), InputFile(File(basePath + "\\" + fileDto.fileName)))
                 sender.execute(sendAnimation)
             }
 

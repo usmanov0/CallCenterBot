@@ -1,7 +1,5 @@
 package uz.spring.support_bot_v1
 
-import java.util.*
-
 data class BaseMessage(val code: Int, val message: String?)
 
 data class UserDto(
@@ -72,7 +70,7 @@ data class UserFileDto(
     val fileName: String,
     val caption: String?,
     val contentType: ContentType,
-    val userChatId: Long,
+    val chatId: Long,
     val userLanguage: String,
     val content: ByteArray
 ) {
@@ -86,6 +84,30 @@ data class UserFileDto(
             session,
             FileType.FILE
         )
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as UserFileDto
+
+        if (fileName != other.fileName) return false
+        if (caption != other.caption) return false
+        if (contentType != other.contentType) return false
+        if (chatId != other.chatId) return false
+        if (userLanguage != other.userLanguage) return false
+        return content.contentEquals(other.content)
+    }
+
+    override fun hashCode(): Int {
+        var result = fileName.hashCode()
+        result = 31 * result + (caption?.hashCode() ?: 0)
+        result = 31 * result + contentType.hashCode()
+        result = 31 * result + chatId.hashCode()
+        result = 31 * result + userLanguage.hashCode()
+        result = 31 * result + content.contentHashCode()
+        return result
+    }
 }
 
 data class OperatorMessageDto(
@@ -210,8 +232,7 @@ data class OperatorFileDto(
     val fileName: String,
     val caption: String?,
     val contentType: ContentType,
-    val operatorChatId: Long,
-    val content: ByteArray?,
+    val chatId: Long,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -222,8 +243,7 @@ data class OperatorFileDto(
         if (fileName != other.fileName) return false
         if (caption != other.caption) return false
         if (contentType != other.contentType) return false
-        if (operatorChatId != other.operatorChatId) return false
-        if (!content.contentEquals(other.content)) return false
+        if (chatId != other.chatId) return false
 
         return true
     }
@@ -231,8 +251,7 @@ data class OperatorFileDto(
         var result = fileName.hashCode()
         result = 31 * result + (caption?.hashCode() ?: 0)
         result = 31 * result + contentType.hashCode()
-        result = 31 * result + operatorChatId.hashCode()
-        result = 31 * result + content.contentHashCode()
+        result = 31 * result + chatId.hashCode()
         return result
     }
 }

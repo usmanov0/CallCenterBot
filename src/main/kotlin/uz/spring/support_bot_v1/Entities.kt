@@ -61,6 +61,7 @@ class Languages(
     var name: LanguageEnum,
 ) : BaseEntity()
 
+
 @Entity
 class OperatorsLanguages(
     @ManyToOne var language: Languages,
