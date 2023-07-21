@@ -343,15 +343,14 @@ class MessageHandlerImpl(
             )
             if (fileDto != null) {
                 val sendAnimation = SendAnimation(
-                    fileDto.operatorChatId.toString(),
+                    fileDto.chatId.toString(),
                     InputFile(File(basePath + "\\" + fileDto.fileName))
                 )
                 sender.execute(sendAnimation)
             }
 
 
-        }
-        else if (message.hasAudio()) {
+        } else if (message.hasAudio()) {
             val audio = message.audio
 
             val content = getFromTelegram(audio.fileId, sender)
@@ -368,15 +367,14 @@ class MessageHandlerImpl(
             )
             if (fileDto != null) {
                 val sendAudio = SendAudio(
-                    fileDto.operatorChatId.toString(),
+                    fileDto.chatId.toString(),
                     InputFile(File(basePath + "\\" + fileDto.fileName))
                 )
                 sender.execute(sendAudio)
             }
 
 
-        }
-        else if (message.hasDocument()) {
+        } else if (message.hasDocument()) {
             val document = message.document
 
             val content = getFromTelegram(document.fileId, sender)
@@ -393,15 +391,14 @@ class MessageHandlerImpl(
             )
             if (fileDto != null) {
                 val sendDocument = SendDocument(
-                    fileDto.operatorChatId.toString(),
+                    fileDto.chatId.toString(),
                     InputFile(File(basePath + "\\" + fileDto.fileName))
                 )
                 sender.execute(sendDocument)
             }
 
 
-        }
-        else if (message.hasPhoto()) {
+        } else if (message.hasPhoto()) {
             val photo = message.photo
 
             val content = getFromTelegram(photo[1].fileId, sender)
@@ -418,14 +415,13 @@ class MessageHandlerImpl(
             )
             if (fileDto != null) {
                 val sendPhoto = SendPhoto(
-                    fileDto.operatorChatId.toString(),
+                    fileDto.chatId.toString(),
                     InputFile(File(basePath + "\\" + fileDto.fileName))
                 )
                 sender.execute(sendPhoto)
             }
 
-        }
-        else if (message.hasVideo()) {
+        } else if (message.hasVideo()) {
             val video = message.video
 
             val content = getFromTelegram(video.fileId, sender)
@@ -442,14 +438,13 @@ class MessageHandlerImpl(
             )
             if (fileDto != null) {
                 val sendVideo = SendVideo(
-                    fileDto.operatorChatId.toString(),
+                    fileDto.chatId.toString(),
                     InputFile(File(basePath + "\\" + fileDto.fileName))
                 )
                 sender.execute(sendVideo)
             }
 
-        }
-        else if (message.hasVideoNote()) {
+        } else if (message.hasVideoNote()) {
             val videoNote = message.videoNote
 
             val content = getFromTelegram(videoNote.fileId, sender)
@@ -466,14 +461,13 @@ class MessageHandlerImpl(
             )
             if (fileDto != null) {
                 val sendVideoNote = SendVideoNote(
-                    fileDto.operatorChatId.toString(),
+                    fileDto.chatId.toString(),
                     InputFile(File(basePath + "\\" + fileDto.fileName))
                 )
                 sender.execute(sendVideoNote)
             }
 
-        }
-        else if (message.hasSticker()) {
+        } else if (message.hasSticker()) {
             val sticker = message.sticker
 
             val content = getFromTelegram(sticker.fileId, sender)
@@ -490,14 +484,13 @@ class MessageHandlerImpl(
             )
             if (fileDto != null) {
                 val sendSticker = SendSticker(
-                    fileDto.operatorChatId.toString(),
+                    fileDto.chatId.toString(),
                     InputFile(File(basePath + "\\" + fileDto.fileName))
                 )
                 sender.execute(sendSticker)
             }
 
-        }
-        else if (message.hasVoice()) {
+        } else if (message.hasVoice()) {
             val voice = message.voice
 
             val content = getFromTelegram(voice.fileId, sender)
@@ -514,7 +507,7 @@ class MessageHandlerImpl(
             )
             if (fileDto != null) {
                 val sendVoice = SendVoice(
-                    fileDto.operatorChatId.toString(),
+                    fileDto.chatId.toString(),
                     InputFile(File(basePath + "\\" + fileDto.fileName))
                 )
                 sender.execute(sendVoice)
@@ -540,10 +533,195 @@ class MessageHandlerImpl(
         if (list != null) {
             temp = true
             for (i in 0..list.size - 2) {
-                sendMessage.text = list[i].body!!
-                sender.execute(sendMessage)
+                val item = list[i].fileDto
+                if (item != null) {
+                    when (item.contentType) {
+                        "VIDEO" -> {
+                            val sendVideo = SendVideo(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+                            sender.execute(sendVideo)
+
+
+                        }
+
+                        "MUSIC" -> {
+                            val sendVoice = SendVoice(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+                            sender.execute(sendVoice)
+
+
+                        }
+
+                        "DOCUMENT" -> {
+                            val sendDocument = SendDocument(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+                            sender.execute(sendDocument)
+
+
+                        }
+
+                        "ANIMATION" -> {
+                            val sendAnimation = SendAnimation(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+                            sender.execute(sendAnimation)
+
+
+                        }
+
+                        "VOICE" -> {
+                            val sendVoice = SendVoice(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+                            sender.execute(sendVoice)
+
+
+                        }
+
+                        "STICKER" -> {
+                            val sendSticker = SendSticker(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+                            sender.execute(sendSticker)
+
+
+                        }
+
+                        "VIDEO_NOTE" -> {
+                            val sendVideoNote = SendVideoNote(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+                            sender.execute(sendVideoNote)
+
+
+                        }
+
+                        "AUDIO" -> {
+                            val sendAudio = SendAudio(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+                            sender.execute(sendAudio)
+
+
+                        }
+
+                        "PHOTO" -> {
+                            val sendPhoto = SendPhoto(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+                            sender.execute(sendPhoto)
+                        }
+                    }
+                } else {
+                    sendMessage.text = list[i].body!!
+                    sender.execute(sendMessage)
+                }
             }
-            sendMessage.text = list[list.size - 1].body!!
+            val item = list[list.size - 1].fileDto
+            if (item != null) {
+                when (item.contentType) {
+                    "VIDEO" -> {
+                        val sendVideo = SendVideo(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+                        sender.execute(sendVideo)
+
+                    }
+
+                    "MUSIC" -> {
+                        val sendVoice = SendVoice(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+                        sender.execute(sendVoice)
+
+
+                    }
+
+                    "DOCUMENT" -> {
+                        val sendDocument = SendDocument(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+                        sender.execute(sendDocument)
+
+
+                    }
+
+                    "ANIMATION" -> {
+                        val sendAnimation = SendAnimation(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+                        sender.execute(sendAnimation)
+
+
+                    }
+
+                    "VOICE" -> {
+                        val sendVoice = SendVoice(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+                        sender.execute(sendVoice)
+
+
+                    }
+
+                    "STICKER" -> {
+                        val sendSticker = SendSticker(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+                        sender.execute(sendSticker)
+
+
+                    }
+
+                    "VIDEO_NOTE" -> {
+                        val sendVideoNote = SendVideoNote(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+                        sender.execute(sendVideoNote)
+
+
+                    }
+
+                    "AUDIO" -> {
+                        val sendAudio = SendAudio(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+                        sender.execute(sendAudio)
+
+
+                    }
+
+                    "PHOTO" -> {
+                        val sendPhoto = SendPhoto(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+                        sender.execute(sendPhoto)
+                    }
+                }
+            } else {
+                sendMessage.text = list[list.size - 1].body!!
+            }
         }
         if (!temp)
             sendMessage.text = "Sizda hozircha habar yoq"
@@ -574,23 +752,24 @@ class MessageHandlerImpl(
             val sendMessage1 = SendMessage()
             sendMessage1.chatId = chatId.toString()
             val user = it.user
-            user.state = BEFORE_SEND_QUESTION
+            user.state = RATE_OPERATOR
             userRepository.save(user)
 
             when (it.chatLanguage) {
                 LanguageEnum.Uzbek -> {
-                    sendMessage1.text = "Suhbat yakunlandi !"
+                    sendMessage1.text = "Operatorni baholang !"
 
                     val keyboardMarkup = ReplyKeyboardMarkup()
                     val keyboard: MutableList<KeyboardRow> = ArrayList()
                     val row = KeyboardRow()
-                    val row1 = KeyboardRow()
 
-                    row.add(SEND_QUESTION_UZ)
-                    row.add(SETTING_UZ)
+                    row.add(ONE)
+                    row.add(TWO)
+                    row.add(THREE)
+                    row.add(FOUR)
+                    row.add(FIVE)
 
                     keyboard.add(row)
-                    keyboard.add(row1)
                     keyboardMarkup.keyboard = keyboard
                     keyboardMarkup.resizeKeyboard = true
                     sendMessage1.replyMarkup = keyboardMarkup
@@ -600,15 +779,18 @@ class MessageHandlerImpl(
                 }
 
                 LanguageEnum.English -> {
-                    sendMessage1.text = "Suhbat yakunlandi !"
+                    sendMessage1.text = "Rate the operator !"
 
                     val keyboardMarkup = ReplyKeyboardMarkup()
                     val keyboard: MutableList<KeyboardRow> = ArrayList()
                     val row = KeyboardRow()
                     val row1 = KeyboardRow()
 
-                    row.add(SEND_QUESTION_EN)
-                    row.add(SETTING_EN)
+                    row.add(ONE)
+                    row.add(TWO)
+                    row.add(THREE)
+                    row.add(FOUR)
+                    row.add(FIVE)
 
                     keyboard.add(row)
                     keyboard.add(row1)
@@ -620,15 +802,18 @@ class MessageHandlerImpl(
                 }
 
                 LanguageEnum.Russian -> {
-                    sendMessage1.text = "Suhbat yakunlandi !"
+                    sendMessage1.text = "Оцените оператора !"
 
                     val keyboardMarkup = ReplyKeyboardMarkup()
                     val keyboard: MutableList<KeyboardRow> = ArrayList()
                     val row = KeyboardRow()
                     val row1 = KeyboardRow()
 
-                    row.add(SEND_QUESTION_RU)
-                    row.add(SETTING_RU)
+                    row.add(ONE)
+                    row.add(TWO)
+                    row.add(THREE)
+                    row.add(FOUR)
+                    row.add(FIVE)
 
                     keyboard.add(row)
                     keyboard.add(row1)
@@ -669,17 +854,210 @@ class MessageHandlerImpl(
 
     private fun sendAnswer(message: Message, sender: AbsSender) {
         val sendMessage = SendMessage()
+        val registerUser = registerUser(message.from)
 
-        val dto = messageService.operatorWriteMsg(
-            OperatorMessageDto(
-                message.text,
-                message.from.id,
-                null
+        if (message.hasText()) {
+            val dto = messageService.operatorWriteMsg(
+                OperatorMessageDto(
+                    message.text,
+                    message.from.id,
+                    null
+                )
             )
-        )
-        sendMessage.chatId = dto.userChatId.toString()
-        sendMessage.text = message.text
-        sender.execute(sendMessage)
+            sendMessage.chatId = dto.userChatId.toString()
+            sendMessage.text = message.text
+            sender.execute(sendMessage)
+
+        }
+        if (message.hasAnimation()) {
+            val animation = message.animation
+
+            val content = getFromTelegram(animation.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    "${animation.fileUniqueId}.gif",
+                    null,
+                    "ANIMATION",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendAnimation = SendAnimation(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendAnimation)
+            }
+
+
+        } else if (message.hasAudio()) {
+            val audio = message.audio
+
+            val content = getFromTelegram(audio.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    audio.fileUniqueId,
+                    null,
+                    "MUSIC",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendAudio = SendAudio(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendAudio)
+            }
+
+
+        } else if (message.hasDocument()) {
+            val document = message.document
+
+            val content = getFromTelegram(document.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    document.fileUniqueId,
+                    null,
+                    "DOCUMENT",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendDocument = SendDocument(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendDocument)
+            }
+
+
+        } else if (message.hasPhoto()) {
+            val photo = message.photo
+
+            val content = getFromTelegram(photo[1].fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    "${photo[1].fileUniqueId}.png",
+                    null,
+                    "PHOTO",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendPhoto = SendPhoto(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendPhoto)
+            }
+
+        } else if (message.hasVideo()) {
+            val video = message.video
+
+            val content = getFromTelegram(video.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    "${video.fileUniqueId}.mp4",
+                    null,
+                    "VIDEO",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendVideo = SendVideo(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendVideo)
+            }
+
+        } else if (message.hasVideoNote()) {
+            val videoNote = message.videoNote
+
+            val content = getFromTelegram(videoNote.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    videoNote.fileUniqueId,
+                    null,
+                    "VIDEO_NOTE",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendVideoNote = SendVideoNote(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendVideoNote)
+            }
+
+        } else if (message.hasSticker()) {
+            val sticker = message.sticker
+
+            val content = getFromTelegram(sticker.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    sticker.fileUniqueId,
+                    null,
+                    "STICKER",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendSticker = SendSticker(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendSticker)
+            }
+
+        } else if (message.hasVoice()) {
+            val voice = message.voice
+
+            val content = getFromTelegram(voice.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    "${voice.fileUniqueId}.ogg",
+                    null,
+                    "VOICE",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendVoice = SendVoice(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendVoice)
+            }
+
+        }
+
 
     }
 
@@ -741,6 +1119,91 @@ class MessageHandlerImpl(
             temp(sendMessage, registerUser.language!!)
             sender.execute(sendMessage)
         }
+    }
+
+    private fun option(message: Message, sender: AbsSender) {
+        val from = message.from
+
+        val rate = message.text
+        userService.rateOperator(
+            MarkOperatorDto(
+                from.id,
+                rate.toShort()
+            )
+        )
+        val registerUser = registerUser(from)
+
+        val sendMessage1 = SendMessage()
+        sendMessage1.chatId = registerUser.chatId.toString()
+
+        registerUser.state = BEFORE_SEND_QUESTION
+        userRepository.save(registerUser)
+
+        when (registerUser.language) {
+            LanguageEnum.Uzbek -> {
+                sendMessage1.text = "Suhbat yakunlandi !"
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_UZ)
+                row.add(SETTING_UZ)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage1.replyMarkup = keyboardMarkup
+
+                sender.execute(sendMessage1)
+
+            }
+
+            LanguageEnum.English -> {
+                sendMessage1.text = "The conversation is over !"
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_EN)
+                row.add(SETTING_EN)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage1.replyMarkup = keyboardMarkup
+
+                sender.execute(sendMessage1)
+            }
+
+            LanguageEnum.Russian -> {
+                sendMessage1.text = "Разговор окончен !"
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_RU)
+                row.add(SETTING_RU)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage1.replyMarkup = keyboardMarkup
+
+                sender.execute(sendMessage1)
+            }
+
+            else -> {}
+        }
+
     }
 
     private fun temp(sendMessage: SendMessage, language1: LanguageEnum) {
@@ -812,25 +1275,6 @@ class MessageHandlerImpl(
         }
     }
 
-//    private fun testVideoGolosFile(message: Message, sender: AbsSender) {
-//        if (message.hasAnimation()) {
-////            val sendAnimation:SendAnimation()
-////            sendAnimation
-//        }else if (message.hasAudio()){
-////            val sendMessage:SendMessage()
-//
-//        }else if (message.hasDocument()){
-//
-//        }else if (message.hasPhoto()){
-//
-//        }else if (message.hasVideo()){
-//
-//        }else if (message.hasVideoNote()){
-//
-//        }else if (message.hasVoice()){
-//
-//        }
-//    }
 
     override fun handle(message: Message, sender: AbsSender) {
         val telegramUser = message.from
@@ -862,6 +1306,8 @@ class MessageHandlerImpl(
 
                 OFFLINE -> offline(message, sender)
 
+                ONE, TWO, THREE, FOUR, FIVE -> option(message, sender)
+
 //                "/video" -> testVideoGolosFile(message, sender)
 
                 "/reply" -> {
@@ -881,6 +1327,7 @@ class MessageHandlerImpl(
                         SEND_ANSWER -> {
                             sendAnswer(message, sender)
                         }
+
 
                         SHARE_CONTACT -> getContact(message, sender)
 
@@ -908,6 +1355,11 @@ class MessageHandlerImpl(
             ).state == SEND_QUESTION
         ) {
             secondQuestion(message, sender)
+        } else if ((message.hasVoice() || message.hasVideoNote() || message.hasVideo() || message.hasPhoto() || message.hasDocument() || message.hasAudio() || message.hasAnimation() || message.hasSticker()) && registerUser(
+                message.from
+            ).state == SEND_ANSWER
+        ) {
+            sendAnswer(message, sender)
         }
     }
 

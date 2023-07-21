@@ -1,7 +1,5 @@
 package uz.spring.support_bot_v1
 
-import java.util.*
-
 data class BaseMessage(val code: Int, val message: String?)
 
 data class UserDto(
@@ -52,7 +50,7 @@ data class MessageReplyDto(
 )
 
 data class UserMessageDto(
-    val body: String,
+    var body: String,
     val userChatId: Long,
     val userLanguage: String
 ) {
@@ -72,7 +70,7 @@ data class UserFileDto(
     val fileName: String,
     val caption: String?,
     val contentType: String,
-    val userChatId: Long,
+    val chatId: Long,
     val userLanguage: String,
     val content: ByteArray
 ) {
@@ -89,7 +87,7 @@ data class UserFileDto(
 }
 
 data class OperatorMessageDto(
-    val body: String,
+    var body: String,
     val operatorChatId: Long,
     val replyMessageId: Long?
 ) {
@@ -205,7 +203,10 @@ data class FileCreateDto(
         return result
     }
 }
-
+data class MarkOperatorDto(
+    val userChatId: Long,
+    val mark: Short?
+)
 data class OperatorFileDto(
     val fileName: String,
     val caption: String?,

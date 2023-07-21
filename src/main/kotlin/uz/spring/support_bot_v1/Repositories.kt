@@ -69,6 +69,7 @@ interface SessionRepository : BaseRepository<Sessions> {
     fun findByUserChatIdAndActiveTrue(userChatId: Long): Sessions?
     fun findByOperatorIdAndActiveTrue(operatorId: Long): Sessions?
     fun findByOperatorChatIdAndActiveTrue(operatorChatId: Long): Sessions?
+    fun findByUserChatIdAndRateNull(userChatId: Long): Sessions?
 
 
     @Query(value = "select s from Sessions s where s.chatLanguage = :language and s.operator = null and s.active = true")

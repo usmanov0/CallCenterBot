@@ -27,6 +27,8 @@ interface UserService {
     fun closeSession(operatorChatId: Long): List<MessageReplyDto>?
 
     fun offlineOperator(operatorChatId: Long)
+
+    fun rateOperator(dto: MarkOperatorDto)
 }
 
 interface MessageService {
@@ -119,7 +121,7 @@ class UserServiceImpl(
                 break
             }
         }
-        if (sessions != null) {
+        if (sessions != null && sessions.user.chatId != operatorChatId) {
             sessions.operator = operator
             sessionRepository.save(sessions)
             operator.operatorState = OperatorState.BUSY
@@ -168,6 +170,19 @@ class UserServiceImpl(
             userRepository.save(operator)
         } ?: throw OperatorNotFoundException(operatorChatId)
     }
+
+    override fun rateOperator(dto: MarkOperatorDto) {
+        dto.run {
+            sessionRepository.findByUserChatIdAndRateNull(userChatId)?.let { session ->
+                if (mark != null)
+                    session.rate = mark
+                else
+                    session.rate = -1
+
+                sessionRepository.save(session)
+            } ?: throw SessionNotFoundException(userChatId)
+        }
+    }
 }
 
 @Service
@@ -200,6 +215,7 @@ class MessageServiceImpl(
             } else if (sessions.operator != null) {
                 operatorMessageDto = OperatorMessageDto(dto.body, sessions.operator!!.chatId, null)
             }
+            dto.body = sessions.user.phone + " ==> " + dto.body
             val message =
                 Messages(MessageType.QUESTION, dto.body, false, LanguageEnum.valueOf(dto.userLanguage), it, sessions,FileType.TEXT)
             messageRepository.save(message)
@@ -219,11 +235,11 @@ class MessageServiceImpl(
                     operator.operatorState = OperatorState.BUSY
                     userRepository.save(operator)
                     newSession.operator = operator
-                    operatorFileDto = OperatorFileDto(dto.fileName, dto.caption, dto.contentType, operator.chatId)
+                    operatorFileDto = OperatorFileDto(dto.fileName, dto.caption, operator.chatId,dto.contentType, null)
                 }
                 sessions =  sessionRepository.save(newSession)
             } else if (sessions.operator != null) {
-                operatorFileDto = OperatorFileDto(dto.fileName, dto.caption, dto.contentType, sessions.operator!!.chatId)
+                operatorFileDto = OperatorFileDto(dto.fileName, dto.caption,sessions.operator!!.chatId, dto.contentType, null)
             }
             var message = Messages(MessageType.QUESTION, dto.caption, false, LanguageEnum.valueOf(dto.userLanguage), user, sessions, FileType.FILE )
             message = messageRepository.save(message)
@@ -235,9 +251,10 @@ class MessageServiceImpl(
     override fun operatorWriteFile(dto: UserFileDto): OperatorFileDto? {
         userRepository.findByChatIdAndDeletedFalse(dto.chatId)?.let {operator ->
             val sessions = sessionRepository.findByOperatorChatIdAndActiveTrue(dto.chatId)
-            val message = Messages(MessageType.ANSWER, dto.caption, false, LanguageEnum.valueOf(dto.userLanguage), sessions!!.user, sessions, FileType.FILE)
+            val newMessage = Messages(MessageType.ANSWER, dto.caption, false, LanguageEnum.valueOf(dto.userLanguage), sessions!!.user, sessions, FileType.FILE)
+            val message = messageRepository.save(newMessage)
             fileService.writeFile(FileCreateDto(dto.fileName, basePath, dto.contentType, dto.content), message)
-            val operatorFileDto = OperatorFileDto(dto.fileName, dto.caption, dto.contentType, sessions.user.chatId)
+            val operatorFileDto = OperatorFileDto(dto.fileName, dto.caption, sessions.user.chatId,dto.contentType,null)
             return operatorFileDto
         } ?: throw OperatorNotFoundException(dto.chatId)
     }
@@ -246,7 +263,7 @@ class MessageServiceImpl(
     override fun operatorWriteMsg(dto: OperatorMessageDto): UserMessageDto {
         userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId)?.let { operator ->
             val session = sessionRepository.findByOperatorChatIdAndActiveTrue(dto.operatorChatId)
-            val message = Messages(MessageType.ANSWER, dto.body, false, session!!.chatLanguage, session.user, session,FileType.TEXT)
+            val message = Messages(MessageType.ANSWER,dto.body, false, session!!.chatLanguage, session.user, session,FileType.TEXT)
             messageRepository.save(message)
             val userMessageDto = UserMessageDto(dto.body, session.user.chatId, session.chatLanguage.name)
             return userMessageDto
@@ -264,6 +281,7 @@ class MessageServiceImpl(
         }
         return baseList.map { QuestionsForOperatorDto.toDto(it) }
     }
+
 
 }
 

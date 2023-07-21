@@ -10,8 +10,14 @@ const val basePath = "C:\\files"
 const val OPERATOR_CHAT_ID1: Long = 341330802
 const val OPERATOR_CHAT_ID2: Long = 975051915
 
-const val OPERATOR: String = "OPERATOR"
+const val RATE_OPERATOR: String = "RATE_OPERATOR"
 const val USER: String = "USER"
+
+const val ONE = "1"
+const val TWO = "2"
+const val THREE = "3"
+const val FOUR = "4"
+const val FIVE = "5"
 
 const val UZBEK = "Uzbek"
 const val ENGLISH = "English"

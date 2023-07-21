@@ -36,6 +36,8 @@ class ExceptionHandlers {
 
             is LanguageExistsException -> ResponseEntity.badRequest()
                 .body(exception.getErrorMessage())
+            is SessionNotFoundException -> ResponseEntity.badRequest()
+                .body(exception.getErrorMessage())
         }
     }
 }
