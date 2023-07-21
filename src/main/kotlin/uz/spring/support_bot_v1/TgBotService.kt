@@ -1308,15 +1308,6 @@ class MessageHandlerImpl(
 
                 ONE, TWO, THREE, FOUR, FIVE -> option(message, sender)
 
-//                "/video" -> testVideoGolosFile(message, sender)
-
-                "/reply" -> {
-                    sendMessage.chatId = "341330802"
-                    sendMessage.text = "salom"
-                    sendMessage.replyToMessageId = 5764
-                    sender.execute(sendMessage)
-                }
-
                 else -> {
                     val registerUser = registerUser(message.from)
                     when (registerUser.state) {
@@ -1332,9 +1323,14 @@ class MessageHandlerImpl(
                         SHARE_CONTACT -> getContact(message, sender)
 
                         else -> {
-                            sendMessage.chatId = registerUser.chatId.toString()
-                            sendMessage.text = "botni qayta ishga tushirish uchun /start tugmasini bosing"
-                            sender.execute(sendMessage)
+                            if (registerUser.state == RATE_OPERATOR){
+                                option(message,sender)
+                            }else{
+                                sendMessage.chatId = registerUser.chatId.toString()
+                                sendMessage.text = "botni qayta ishga tushirish uchun /start tugmasini bosing"
+                                sender.execute(sendMessage)
+                            }
+
                         }
                     }
                 }

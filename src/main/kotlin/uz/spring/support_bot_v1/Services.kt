@@ -174,7 +174,7 @@ class UserServiceImpl(
     override fun rateOperator(dto: MarkOperatorDto) {
         dto.run {
             sessionRepository.findByUserChatIdAndRateNull(userChatId)?.let { session ->
-                if (mark != null)
+                if (mark != null )
                     session.rate = mark
                 else
                     session.rate = -1
@@ -215,7 +215,6 @@ class MessageServiceImpl(
             } else if (sessions.operator != null) {
                 operatorMessageDto = OperatorMessageDto(dto.body, sessions.operator!!.chatId, null)
             }
-            dto.body = sessions.user.phone + " ==> " + dto.body
             val message =
                 Messages(MessageType.QUESTION, dto.body, false, LanguageEnum.valueOf(dto.userLanguage), it, sessions,FileType.TEXT)
             messageRepository.save(message)
