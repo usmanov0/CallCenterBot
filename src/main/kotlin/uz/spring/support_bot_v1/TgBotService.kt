@@ -340,14 +340,17 @@ class MessageHandlerImpl(
 
             }
         }
-        if (message.hasAnimation()) {
+        else if (message.hasAnimation()) {
             val animation = message.animation
 
             val content = getFromTelegram(animation.fileId, sender)
+            val list = animation.mimetype.split("/")
+            val type = list[list.size - 1]
+
 
             val fileDto = messageService.userWriteFile(
                 UserFileDto(
-                    "${animation.fileUniqueId}.gif",
+                    "${animation.fileUniqueId}.${type}",
                     null,
                     "ANIMATION",
                     registerUser.chatId,
@@ -364,7 +367,7 @@ class MessageHandlerImpl(
             }
 
         }
-        if (message.hasContact()) {
+        else if (message.hasContact()) {
             val contact = message.contact
             val sendContact = SendContact()
             val userWriteMsg = messageService.userWriteMsg(
@@ -383,16 +386,19 @@ class MessageHandlerImpl(
             }
 
 
-        } else if (message.hasAudio()) {
+        }
+        else if (message.hasAudio()) {
             val audio = message.audio
 
             val content = getFromTelegram(audio.fileId, sender)
+            val list = audio.mimeType.split("/")
+            val type = list[list.size - 1]
 
             val fileDto = messageService.userWriteFile(
                 UserFileDto(
-                    audio.fileUniqueId,
+                    "${audio.fileUniqueId}.${type}",
                     null,
-                    "MUSIC",
+                    "AUDIO",
                     registerUser.chatId,
                     registerUser.language!!.name,
                     content
@@ -407,14 +413,17 @@ class MessageHandlerImpl(
             }
 
 
-        } else if (message.hasDocument()) {
+        }
+        else if (message.hasDocument()) {
             val document = message.document
 
             val content = getFromTelegram(document.fileId, sender)
+            val list = document.mimeType.split("/")
+            val type = list[list.size - 1]
 
             val fileDto = messageService.userWriteFile(
                 UserFileDto(
-                    document.fileUniqueId,
+                    "${document.fileName}--${document.fileUniqueId}.${type}",
                     null,
                     "DOCUMENT",
                     registerUser.chatId,
@@ -431,11 +440,11 @@ class MessageHandlerImpl(
             }
 
 
-        } else if (message.hasPhoto()) {
+        }
+        else if (message.hasPhoto()) {
             val photo = message.photo
 
             val content = getFromTelegram(photo[1].fileId, sender)
-
             val fileDto = messageService.userWriteFile(
                 UserFileDto(
                     "${photo[1].fileUniqueId}.png",
@@ -454,7 +463,8 @@ class MessageHandlerImpl(
                 sender.execute(sendPhoto)
             }
 
-        } else if (message.hasVideo()) {
+        }
+        else if (message.hasVideo()) {
             val video = message.video
 
             val content = getFromTelegram(video.fileId, sender)
@@ -477,7 +487,8 @@ class MessageHandlerImpl(
                 sender.execute(sendVideo)
             }
 
-        } else if (message.hasVideoNote()) {
+        }
+        else if (message.hasVideoNote()) {
             val videoNote = message.videoNote
 
             val content = getFromTelegram(videoNote.fileId, sender)
@@ -500,7 +511,8 @@ class MessageHandlerImpl(
                 sender.execute(sendVideoNote)
             }
 
-        } else if (message.hasSticker()) {
+        }
+        else if (message.hasSticker()) {
             val sticker = message.sticker
 
             val content = getFromTelegram(sticker.fileId, sender)
@@ -523,7 +535,8 @@ class MessageHandlerImpl(
                 sender.execute(sendSticker)
             }
 
-        } else if (message.hasVoice()) {
+        }
+        else if (message.hasVoice()) {
             val voice = message.voice
 
             val content = getFromTelegram(voice.fileId, sender)
@@ -574,18 +587,21 @@ class MessageHandlerImpl(
                                 operatorChatId.toString(),
                                 InputFile(File(basePath + "\\" + item.fileName))
                             )
+
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendVideo.replyMarkup = keyboardMarkup
                             sender.execute(sendVideo)
-
-
-                        }
-
-                        "MUSIC" -> {
-                            val sendVoice = SendVoice(
-                                operatorChatId.toString(),
-                                InputFile(File(basePath + "\\" + item.fileName))
-                            )
-                            sender.execute(sendVoice)
-
 
                         }
 
@@ -594,6 +610,21 @@ class MessageHandlerImpl(
                                 operatorChatId.toString(),
                                 InputFile(File(basePath + "\\" + item.fileName))
                             )
+
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendDocument.replyMarkup = keyboardMarkup
+
                             sender.execute(sendDocument)
 
 
@@ -604,9 +635,22 @@ class MessageHandlerImpl(
                                 operatorChatId.toString(),
                                 InputFile(File(basePath + "\\" + item.fileName))
                             )
+
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendAnimation.replyMarkup = keyboardMarkup
+
                             sender.execute(sendAnimation)
-
-
                         }
 
                         "VOICE" -> {
@@ -614,6 +658,21 @@ class MessageHandlerImpl(
                                 operatorChatId.toString(),
                                 InputFile(File(basePath + "\\" + item.fileName))
                             )
+
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendVoice.replyMarkup = keyboardMarkup
+
                             sender.execute(sendVoice)
 
 
@@ -625,6 +684,20 @@ class MessageHandlerImpl(
                                 InputFile(File(basePath + "\\" + item.fileName))
                             )
 
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendSticker.replyMarkup = keyboardMarkup
+
                             sender.execute(sendSticker)
 
 
@@ -635,8 +708,21 @@ class MessageHandlerImpl(
                                 operatorChatId.toString(),
                                 InputFile(File(basePath + "\\" + item.fileName))
                             )
-                            sender.execute(sendVideoNote)
 
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendVideoNote.replyMarkup = keyboardMarkup
+                            sender.execute(sendVideoNote)
 
                         }
 
@@ -645,6 +731,20 @@ class MessageHandlerImpl(
                                 operatorChatId.toString(),
                                 InputFile(File(basePath + "\\" + item.fileName))
                             )
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendAudio.replyMarkup = keyboardMarkup
+
                             sender.execute(sendAudio)
 
 
@@ -655,11 +755,38 @@ class MessageHandlerImpl(
                                 operatorChatId.toString(),
                                 InputFile(File(basePath + "\\" + item.fileName))
                             )
+
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendPhoto.replyMarkup = keyboardMarkup
+
                             sender.execute(sendPhoto)
                         }
                     }
                 } else {
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
                     sendMessage.text = list[i].body!!
+
+                    row.add(OFFLINE_SESSION)
+                    row1.add(OFFLINE)
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage.replyMarkup = keyboardMarkup
                     sender.execute(sendMessage)
                 }
             }
@@ -671,17 +798,21 @@ class MessageHandlerImpl(
                             operatorChatId.toString(),
                             InputFile(File(basePath + "\\" + item.fileName))
                         )
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendVideo.replyMarkup = keyboardMarkup
+
                         sender.execute(sendVideo)
-
-                    }
-
-                    "MUSIC" -> {
-                        val sendVoice = SendVoice(
-                            operatorChatId.toString(),
-                            InputFile(File(basePath + "\\" + item.fileName))
-                        )
-                        sender.execute(sendVoice)
-
 
                     }
 
@@ -690,6 +821,21 @@ class MessageHandlerImpl(
                             operatorChatId.toString(),
                             InputFile(File(basePath + "\\" + item.fileName))
                         )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendDocument.replyMarkup = keyboardMarkup
+
                         sender.execute(sendDocument)
 
 
@@ -700,9 +846,22 @@ class MessageHandlerImpl(
                             operatorChatId.toString(),
                             InputFile(File(basePath + "\\" + item.fileName))
                         )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendAnimation.replyMarkup = keyboardMarkup
+
                         sender.execute(sendAnimation)
-
-
                     }
 
                     "VOICE" -> {
@@ -710,6 +869,21 @@ class MessageHandlerImpl(
                             operatorChatId.toString(),
                             InputFile(File(basePath + "\\" + item.fileName))
                         )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendVoice.replyMarkup = keyboardMarkup
+
                         sender.execute(sendVoice)
 
 
@@ -720,6 +894,21 @@ class MessageHandlerImpl(
                             operatorChatId.toString(),
                             InputFile(File(basePath + "\\" + item.fileName))
                         )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendSticker.replyMarkup = keyboardMarkup
+
                         sender.execute(sendSticker)
 
 
@@ -730,6 +919,21 @@ class MessageHandlerImpl(
                             operatorChatId.toString(),
                             InputFile(File(basePath + "\\" + item.fileName))
                         )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendVideoNote.replyMarkup = keyboardMarkup
+
                         sender.execute(sendVideoNote)
 
 
@@ -740,6 +944,21 @@ class MessageHandlerImpl(
                             operatorChatId.toString(),
                             InputFile(File(basePath + "\\" + item.fileName))
                         )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendAudio.replyMarkup = keyboardMarkup
+
                         sender.execute(sendAudio)
 
 
@@ -750,31 +969,54 @@ class MessageHandlerImpl(
                             operatorChatId.toString(),
                             InputFile(File(basePath + "\\" + item.fileName))
                         )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendPhoto.replyMarkup = keyboardMarkup
+
                         sender.execute(sendPhoto)
                     }
                 }
             } else {
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
                 sendMessage.text = list[list.size - 1].body!!
+                row.add(OFFLINE_SESSION)
+                row1.add(OFFLINE)
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage.replyMarkup = keyboardMarkup
+                sender.execute(sendMessage)
             }
         }
-        if (!temp)
+        if (!temp) {
+            val keyboardMarkup = ReplyKeyboardMarkup()
+            val keyboard: MutableList<KeyboardRow> = ArrayList()
+            val row1 = KeyboardRow()
             sendMessage.text = "Sizda hozircha habar yoq"
-
-        val keyboardMarkup = ReplyKeyboardMarkup()
-        val keyboard: MutableList<KeyboardRow> = ArrayList()
-        val row = KeyboardRow()
-        val row1 = KeyboardRow()
-
-        row.add(OFFLINE_SESSION)
-        row1.add(OFFLINE)
-
-        keyboard.add(row)
-        keyboard.add(row1)
-        keyboardMarkup.keyboard = keyboard
-        keyboardMarkup.resizeKeyboard = true
-        sendMessage.replyMarkup = keyboardMarkup
-        sender.execute(sendMessage)
+            row1.add(OFFLINE)
+            keyboard.add(row1)
+            keyboardMarkup.keyboard = keyboard
+            keyboardMarkup.resizeKeyboard = true
+            sendMessage.replyMarkup = keyboardMarkup
+            sender.execute(sendMessage)
+        }
     }
+
 
     private fun closeChat(message: Message, sender: AbsSender) {
         var temp: Boolean = false
@@ -1119,6 +1361,88 @@ class MessageHandlerImpl(
         val sendMessage = SendMessage()
         val operatorChatId = message.from.id
         sendMessage.chatId = operatorChatId.toString()
+
+
+        sessionRepository.findByOperatorChatIdAndActiveTrue(operatorChatId)?.let {
+            val chatId = it.user.chatId
+            val sendMessage1 = SendMessage()
+            sendMessage1.chatId = chatId.toString()
+            val user = it.user
+            user.state = RATE_OPERATOR
+            userRepository.save(user)
+
+            when (it.chatLanguage) {
+                LanguageEnum.Uzbek -> {
+                    sendMessage1.text = "Operatorni baholang !"
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+
+                    row.add(ONE)
+                    row.add(TWO)
+                    row.add(THREE)
+                    row.add(FOUR)
+                    row.add(FIVE)
+
+                    keyboard.add(row)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage1.replyMarkup = keyboardMarkup
+
+                    sender.execute(sendMessage1)
+
+                }
+
+                LanguageEnum.English -> {
+                    sendMessage1.text = "Rate the operator !"
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
+
+                    row.add(ONE)
+                    row.add(TWO)
+                    row.add(THREE)
+                    row.add(FOUR)
+                    row.add(FIVE)
+
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage1.replyMarkup = keyboardMarkup
+
+                    sender.execute(sendMessage1)
+                }
+
+                LanguageEnum.Russian -> {
+                    sendMessage1.text = "Оцените оператора !"
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
+
+                    row.add(ONE)
+                    row.add(TWO)
+                    row.add(THREE)
+                    row.add(FOUR)
+                    row.add(FIVE)
+
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage1.replyMarkup = keyboardMarkup
+
+                    sender.execute(sendMessage1)
+                }
+            }
+        }
+
+
         userService.offlineOperator(operatorChatId)
         sendMessage.text = "Ish yakunlandi !"
 
@@ -1209,10 +1533,16 @@ class MessageHandlerImpl(
         val from = message.from
 
         val rate = message.text
+        var rate1 : Short? = null
+        if (rate == ONE || rate == TWO || rate == THREE || rate == FOUR || rate == FIVE) {
+            rate1 = rate.toShort()
+        }else {
+            rate1 = -1
+        }
         userService.rateOperator(
             MarkOperatorDto(
                 from.id,
-                rate.toShort()
+                rate1
             )
         )
         val registerUser = registerUser(from)
@@ -1471,13 +1801,12 @@ class MessageHandlerImpl(
                     message,
                     sender
                 )
-            else if ((text == ONLINE_UZ || text == ONLINE_RU) && registerUser.state == AFTER_START_OPERATOR)
+            else if ((text == ONLINE_UZ || text == ONLINE_RU) && (registerUser.state == AFTER_START_OPERATOR || registerUser.state == STATE_OFFLINE))
                 getQuestions(message, sender)
             else if (text == OFFLINE_SESSION && registerUser.state == SEND_ANSWER) closeChat(message, sender)
             else if (text == OFFLINE && registerUser.state == SEND_ANSWER)
                 offline(message, sender)
-            else if (text == ONE || text == TWO || text == THREE || text == FOUR || text == FIVE && registerUser.state == RATE_OPERATOR)
-                option(message, sender)
+
             else {
                 when (registerUser.state) {
                     SEND_QUESTION -> {

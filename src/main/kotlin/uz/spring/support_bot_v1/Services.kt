@@ -178,11 +178,7 @@ class UserServiceImpl(
     override fun rateOperator(dto: MarkOperatorDto) {
         dto.run {
             sessionRepository.findByUserChatIdAndRateNull(userChatId)?.let { session ->
-                if (mark != null )
-                    session.rate = mark
-                else
-                    session.rate = -1
-
+                session.rate = dto.mark
                 sessionRepository.save(session)
             } ?: throw SessionNotFoundException(userChatId)
         }
