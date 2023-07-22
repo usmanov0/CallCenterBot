@@ -49,6 +49,21 @@ data class MessageReplyDto(
     val fileDto: FileResponseDto?
 )
 
+data class RequestMessageDto(
+    val userChatId: Long,
+    val body: String,
+    val userLanguage: String?,  // null for operator
+    val messageTgId: Long,
+    val repliedMessageTgId: Long?,  // generated id by tg for the replied message
+)
+
+data class ResponseMessageDto(
+    val userChatId: Long,
+    val messageBody: String,
+    val messageId: Long,
+    val repliedMessageTgId: Long?,  // generated id by tg for the replied message
+)
+
 data class UserMessageDto(
     var body: String,
     val userChatId: Long,
@@ -58,11 +73,14 @@ data class UserMessageDto(
         Messages(
             MessageType.QUESTION,
             body,
+            null,
+            null,
             false,
             LanguageEnum.valueOf(userLanguage),
             user,
             session,
-            FileType.TEXT
+            FileType.TEXT,
+            null
         )
 }
 
@@ -78,11 +96,14 @@ data class UserFileDto(
         Messages(
             MessageType.QUESTION,
             fileName,
+            null,
+            null,
             false,
             LanguageEnum.valueOf(userLanguage),
             user,
             session,
-            FileType.FILE
+            FileType.FILE,
+            null
         )
 }
 
@@ -95,11 +116,14 @@ data class OperatorMessageDto(
         Messages(
             MessageType.ANSWER,
             body,
+            null,
+            null,
             true,
             message.messageLanguage,
             operator,
             session,
-            FileType.TEXT
+            FileType.TEXT,
+            null
         )
 }
 

@@ -292,49 +292,61 @@ class MessageHandlerImpl(
             when (language1.toString()) {
                 UZBEK -> {
                     val userWriteMsg = messageService.userWriteMsg(
-                        UserMessageDto(
-                            message.text,
+                        RequestMessageDto(
                             registerUser.chatId,
-                            registerUser.language!!.name
+                            message.text,
+                            registerUser.language!!.name,
+                            message.messageId.toLong(),
+                            message.replyToMessage?.messageId?.toLong()
                         )
                     )
                     if (userWriteMsg != null) {
-                        val operatorChatId = userWriteMsg.operatorChatId
+                        val operatorChatId = userWriteMsg.userChatId
                         sendMessage.chatId = operatorChatId.toString()
-                        sendMessage.text = message.text
-                        sender.execute(sendMessage)
+                        sendMessage.text = userWriteMsg.messageBody
+                        sendMessage.replyToMessageId = userWriteMsg.repliedMessageTgId?.toInt()
+                        val execute = sender.execute(sendMessage)
+                        messageService.setTgMessageIdOfMessage(userWriteMsg.messageId, execute.messageId.toLong())
                     }
                 }
 
                 RUSSIAN -> {
                     val userWriteMsg = messageService.userWriteMsg(
-                        UserMessageDto(
-                            message.text,
+                        RequestMessageDto(
                             registerUser.chatId,
-                            registerUser.language!!.name
+                            message.text,
+                            registerUser.language!!.name,
+                            message.messageId.toLong(),
+                            message.replyToMessage?.messageId?.toLong()
                         )
                     )
                     if (userWriteMsg != null) {
-                        val operatorChatId = userWriteMsg.operatorChatId
+                        val operatorChatId = userWriteMsg.userChatId
                         sendMessage.chatId = operatorChatId.toString()
-                        sendMessage.text = message.text
-                        sender.execute(sendMessage)
+                        sendMessage.text = userWriteMsg.messageBody
+                        sendMessage.replyToMessageId = userWriteMsg.repliedMessageTgId?.toInt()
+                        val execute = sender.execute(sendMessage)
+                        messageService.setTgMessageIdOfMessage(userWriteMsg.messageId, execute.messageId.toLong())
                     }
                 }
 
                 ENGLISH -> {
                     val userWriteMsg = messageService.userWriteMsg(
-                        UserMessageDto(
-                            message.text,
+                        RequestMessageDto(
                             registerUser.chatId,
-                            registerUser.language!!.name
+                            message.text,
+                            registerUser.language!!.name,
+                            message.messageId.toLong(),
+                            message.replyToMessage?.messageId?.toLong()
                         )
                     )
                     if (userWriteMsg != null) {
-                        val operatorChatId = userWriteMsg.operatorChatId
+                        val operatorChatId = userWriteMsg.userChatId
                         sendMessage.chatId = operatorChatId.toString()
-                        sendMessage.text = message.text
-                        sender.execute(sendMessage)
+                        sendMessage.text = userWriteMsg.messageBody
+                        sendMessage.replyToMessageId = userWriteMsg.repliedMessageTgId?.toInt()
+                        val execute = sender.execute(sendMessage)
+                        messageService.setTgMessageIdOfMessage(userWriteMsg.messageId, execute.messageId.toLong())
                     }
                 }
 
@@ -368,14 +380,21 @@ class MessageHandlerImpl(
             val contact = message.contact
             val sendContact = SendContact()
             val userWriteMsg = messageService.userWriteMsg(
-                UserMessageDto(
-                    contact.phoneNumber,
-                    registerUser.chatId,
-                    registerUser.language!!.name
-                )
+//                UserMessageDto(
+//                    contact.phoneNumber,
+//                    registerUser.chatId,
+//                    registerUser.language!!.name
+//                )
+            RequestMessageDto(
+                registerUser.chatId,
+                message.contact.phoneNumber,
+                registerUser.language!!.name,
+                message.messageId.toLong(),
+                message.replyToMessage?.messageId?.toLong()
+            )
             )
             if (userWriteMsg != null) {
-                val operatorChatId = userWriteMsg.operatorChatId
+                val operatorChatId = userWriteMsg.userChatId
                 sendContact.chatId = operatorChatId.toString()
                 sendContact.firstName = registerUser.firstName
                 sendContact.phoneNumber = contact.phoneNumber
@@ -895,15 +914,19 @@ class MessageHandlerImpl(
         if (message.hasText()) {
             val sendMessage = SendMessage()
             val dto = messageService.operatorWriteMsg(
-                OperatorMessageDto(
-                    message.text,
+                RequestMessageDto(
                     message.from.id,
-                    null
+                    message.text,
+                    null,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             sendMessage.chatId = dto.userChatId.toString()
             sendMessage.text = message.text
-            sender.execute(sendMessage)
+            sendMessage.replyToMessageId = dto.repliedMessageTgId?.toInt()
+            val execute = sender.execute(sendMessage)
+            messageService.setTgMessageIdOfMessage(dto.messageId, execute.messageId.toLong())
 
         }
 
@@ -911,16 +934,25 @@ class MessageHandlerImpl(
 
             val sendContact = SendContact()
             val dto = messageService.operatorWriteMsg(
-                OperatorMessageDto(
-                    message.contact.phoneNumber,
+//                OperatorMessageDto(
+//                    message.contact.phoneNumber,
+//                    message.from.id,
+//                    null
+//                )
+                RequestMessageDto(
                     message.from.id,
-                    null
+                    message.contact.phoneNumber,
+                    null,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             sendContact.chatId = dto.userChatId.toString()
             sendContact.firstName = message.contact.firstName
             sendContact.phoneNumber = message.contact.phoneNumber
-            sender.execute(sendContact)
+            sendContact.replyToMessageId = dto.repliedMessageTgId?.toInt()
+            val execute = sender.execute(sendContact)
+            messageService.setTgMessageIdOfMessage(dto.messageId, execute.messageId.toLong())
         }
 
         if (message.hasAnimation()) {

@@ -83,6 +83,8 @@ interface MessageRepository : BaseRepository<Messages> {
 
     fun findBySessionIdOrderByCreatedDate(sessionId: Long?): List<Messages>
     fun findAllBySessionId(sessionId: Long): List<Messages>
+    fun findByTgMessageId4User(tgMessageId: Long): Messages?
+    fun findByTgMessageId4Oper(tgMessageId: Long): Messages?
 }
 
 interface LanguageRepository : BaseRepository<Languages> {
