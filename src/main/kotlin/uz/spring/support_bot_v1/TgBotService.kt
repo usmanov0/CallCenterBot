@@ -351,8 +351,7 @@ class MessageHandlerImpl(
                 }
 
             }
-        }
-        else if (message.hasAnimation()) {
+        } else if (message.hasAnimation()) {
             val animation = message.animation
 
             val content = getFromTelegram(animation.fileId, sender)
@@ -378,8 +377,7 @@ class MessageHandlerImpl(
                 sender.execute(sendAnimation)
             }
 
-        }
-        else if (message.hasContact()) {
+        } else if (message.hasContact()) {
             val contact = message.contact
             val sendContact = SendContact()
             val userWriteMsg = messageService.userWriteMsg(
@@ -388,13 +386,13 @@ class MessageHandlerImpl(
 //                    registerUser.chatId,
 //                    registerUser.language!!.name
 //                )
-            RequestMessageDto(
-                registerUser.chatId,
-                message.contact.phoneNumber,
-                registerUser.language!!.name,
-                message.messageId.toLong(),
-                message.replyToMessage?.messageId?.toLong()
-            )
+                RequestMessageDto(
+                    registerUser.chatId,
+                    message.contact.phoneNumber,
+                    registerUser.language!!.name,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
+                )
             )
             if (userWriteMsg != null) {
                 val operatorChatId = userWriteMsg.userChatId
@@ -405,8 +403,7 @@ class MessageHandlerImpl(
             }
 
 
-        }
-        else if (message.hasAudio()) {
+        } else if (message.hasAudio()) {
             val audio = message.audio
 
             val content = getFromTelegram(audio.fileId, sender)
@@ -432,8 +429,7 @@ class MessageHandlerImpl(
             }
 
 
-        }
-        else if (message.hasDocument()) {
+        } else if (message.hasDocument()) {
             val document = message.document
 
             val content = getFromTelegram(document.fileId, sender)
@@ -459,8 +455,7 @@ class MessageHandlerImpl(
             }
 
 
-        }
-        else if (message.hasPhoto()) {
+        } else if (message.hasPhoto()) {
             val photo = message.photo
 
             val content = getFromTelegram(photo[1].fileId, sender)
@@ -482,8 +477,7 @@ class MessageHandlerImpl(
                 sender.execute(sendPhoto)
             }
 
-        }
-        else if (message.hasVideo()) {
+        } else if (message.hasVideo()) {
             val video = message.video
 
             val content = getFromTelegram(video.fileId, sender)
@@ -506,8 +500,7 @@ class MessageHandlerImpl(
                 sender.execute(sendVideo)
             }
 
-        }
-        else if (message.hasVideoNote()) {
+        } else if (message.hasVideoNote()) {
             val videoNote = message.videoNote
 
             val content = getFromTelegram(videoNote.fileId, sender)
@@ -530,8 +523,7 @@ class MessageHandlerImpl(
                 sender.execute(sendVideoNote)
             }
 
-        }
-        else if (message.hasSticker()) {
+        } else if (message.hasSticker()) {
             val sticker = message.sticker
 
             val content = getFromTelegram(sticker.fileId, sender)
@@ -554,8 +546,7 @@ class MessageHandlerImpl(
                 sender.execute(sendSticker)
             }
 
-        }
-        else if (message.hasVoice()) {
+        } else if (message.hasVoice()) {
             val voice = message.voice
 
             val content = getFromTelegram(voice.fileId, sender)
@@ -1170,17 +1161,10 @@ class MessageHandlerImpl(
             val execute = sender.execute(sendMessage)
             messageService.setTgMessageIdOfMessage(dto.messageId, execute.messageId.toLong())
 
-        }
-
-        if (message.hasContact()) {
+        } else if (message.hasContact()) {
 
             val sendContact = SendContact()
             val dto = messageService.operatorWriteMsg(
-//                OperatorMessageDto(
-//                    message.contact.phoneNumber,
-//                    message.from.id,
-//                    null
-//                )
                 RequestMessageDto(
                     message.from.id,
                     message.contact.phoneNumber,
@@ -1195,9 +1179,7 @@ class MessageHandlerImpl(
             sendContact.replyToMessageId = dto.repliedMessageTgId?.toInt()
             val execute = sender.execute(sendContact)
             messageService.setTgMessageIdOfMessage(dto.messageId, execute.messageId.toLong())
-        }
-
-        if (message.hasAnimation()) {
+        } else if (message.hasAnimation()) {
             val animation = message.animation
 
             val content = getFromTelegram(animation.fileId, sender)
@@ -1519,56 +1501,39 @@ class MessageHandlerImpl(
                     else -> {}
                 }
                 sender.execute(sendMessage)
-            }
-            if (message.text != null) {
-                val phone = message.text
-                val language1 = registerUser.language!!
-                sendMessage.chatId = message.from.id.toString()
+            } else if (message.contact == null) {
 
-                val regex = Regex("^(\\+998|998)\\d{9}$")
-                val matches = regex.matches(phone)
-                if (matches) {
+                sendMessage.chatId = registerUser.chatId.toString()
 
-                    registerUser.state = BEFORE_SEND_QUESTION
-                    registerUser.phone = phone
-                    userRepository.save(registerUser)
+                when (registerUser.language) {
+                    LanguageEnum.Uzbek -> sendMessage.text = "Iltimos contact yuboring"
+                    LanguageEnum.English
 
-                    temp(sendMessage, language1)
+                    -> sendMessage.text = "Please send contact!"
 
-                    sender.execute(sendMessage)
+                    LanguageEnum.Russian
 
-                } else {
-                    when (registerUser.language) {
-                        LanguageEnum.Uzbek -> sendMessage.text =
-                            "Telefoninggizni ushbu ko'rinishda kiriting 998901234567"
+                    -> sendMessage.text = "Пожалуйста, пришлите контакт!"
 
-                        LanguageEnum.English -> sendMessage.text = "Enter your phone in this view 998901234567"
-                        LanguageEnum.Russian -> sendMessage.text =
-                            "Введите свой телефон в этом представлении 998901234567"
+                    null
 
-                        else -> {}
-                    }
-                    sender.execute(sendMessage)
+                    -> sendMessage.text = "Please send contact!"
                 }
+                sender.execute(sendMessage)
             }
 
 
         }
-        /*else if (registerUser.state == BEFORE_SEND_QUESTION) {
-            sendMessage.chatId = registerUser.chatId.toString()
-            temp(sendMessage, registerUser.language!!)
-            sender.execute(sendMessage)
-        }*/
     }
 
     private fun option(message: Message, sender: AbsSender) {
         val from = message.from
 
         val rate = message.text
-        var rate1 : Short? = null
+        var rate1: Short? = null
         if (rate == ONE || rate == TWO || rate == THREE || rate == FOUR || rate == FIVE) {
             rate1 = rate.toShort()
-        }else {
+        } else {
             rate1 = -1
         }
         userService.rateOperator(
@@ -1797,11 +1762,7 @@ class MessageHandlerImpl(
         val registerUser = registerUser(message.from)
         return when (registerUser.state) {
             SHARE_CONTACT -> startUser(message, sender)
-//            BEFORE_SEND_QUESTION -> {
-//                registerUser.state = CHOOSE_LANGUAGE
-//                userRepository.save(registerUser)
-//                start(message, sender)
-//            }
+
             else -> startUser(message, sender)
         }
     }
@@ -1838,7 +1799,6 @@ class MessageHandlerImpl(
             else if (text == OFFLINE_SESSION && registerUser.state == SEND_ANSWER) closeChat(message, sender)
             else if (text == OFFLINE && registerUser.state == SEND_ANSWER)
                 offline(message, sender)
-
             else {
                 when (registerUser.state) {
                     SEND_QUESTION -> {

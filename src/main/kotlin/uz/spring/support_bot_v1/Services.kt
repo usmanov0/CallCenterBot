@@ -84,6 +84,11 @@ class UserServiceImpl(
 
     override fun addOperator(chatId: Long) {
         val user = userRepository.findByChatIdAndDeletedFalse(chatId) ?: throw OperatorNotFoundException(chatId)
+        sessionRepository.findByUserChatIdAndActiveTrue(chatId)?.let { sessions ->
+            sessions.active = false
+            sessions.rate = -1
+            sessionRepository.save(sessions)
+        }
         user.role = Role.OPERATOR
         user.state = STATE_OFFLINE
         user.operatorState = OperatorState.NOT_BUSY
@@ -123,7 +128,7 @@ class UserServiceImpl(
                 break
             }
         }
-        if (sessions != null && sessions.user.chatId != operatorChatId) {
+        if (sessions != null) {
             sessions.operator = operator
             sessionRepository.save(sessions)
             operator.operatorState = OperatorState.BUSY
