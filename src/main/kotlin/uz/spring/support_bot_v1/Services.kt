@@ -85,6 +85,7 @@ class UserServiceImpl(
     override fun addOperator(chatId: Long) {
         val user = userRepository.findByChatIdAndDeletedFalse(chatId) ?: throw OperatorNotFoundException(chatId)
         user.role = Role.OPERATOR
+        user.state = STATE_OFFLINE
         user.operatorState = OperatorState.NOT_BUSY
         userRepository.save(user)
     }
@@ -110,6 +111,7 @@ class UserServiceImpl(
         )
         operator.isOnline = true
         operator.operatorState = OperatorState.NOT_BUSY
+        operator.state = SEND_ANSWER
         userRepository.save(operator)
         val languages = operatorsLanguagesRepository.getAllLanguagesByOperatorId(operator.id!!)
         var sessions: Sessions? = null
@@ -150,6 +152,7 @@ class UserServiceImpl(
                 session.endTime = Date()
                 sessionRepository.save(session)
                 operator.operatorState = OperatorState.NOT_BUSY
+                operator.state = SEND_ANSWER
                 userRepository.save(operator)
                 return onlineOperator(operatorChatId)
             }
@@ -167,6 +170,7 @@ class UserServiceImpl(
             }
             operator.operatorState = OperatorState.NOT_BUSY
             operator.isOnline = false
+            operator.state = STATE_OFFLINE
             userRepository.save(operator)
         } ?: throw OperatorNotFoundException(operatorChatId)
     }

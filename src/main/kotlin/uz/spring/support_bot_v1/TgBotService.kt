@@ -6,6 +6,7 @@ import org.springframework.web.client.getForObject
 import org.telegram.telegrambots.meta.api.methods.GetFile
 import org.telegram.telegrambots.meta.api.methods.send.SendAnimation
 import org.telegram.telegrambots.meta.api.methods.send.SendAudio
+import org.telegram.telegrambots.meta.api.methods.send.SendContact
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
@@ -362,6 +363,25 @@ class MessageHandlerImpl(
                 sender.execute(sendAnimation)
             }
 
+        }
+        if (message.hasContact()) {
+            val contact = message.contact
+            val sendContact = SendContact()
+            val userWriteMsg = messageService.userWriteMsg(
+                UserMessageDto(
+                    contact.phoneNumber,
+                    registerUser.chatId,
+                    registerUser.language!!.name
+                )
+            )
+            if (userWriteMsg != null) {
+                val operatorChatId = userWriteMsg.operatorChatId
+                sendContact.chatId = operatorChatId.toString()
+                sendContact.firstName = registerUser.firstName
+                sendContact.phoneNumber = contact.phoneNumber
+                sender.execute(sendContact)
+            }
+
 
         } else if (message.hasAudio()) {
             val audio = message.audio
@@ -604,6 +624,7 @@ class MessageHandlerImpl(
                                 operatorChatId.toString(),
                                 InputFile(File(basePath + "\\" + item.fileName))
                             )
+
                             sender.execute(sendSticker)
 
 
@@ -849,14 +870,17 @@ class MessageHandlerImpl(
             }
             sendMessage.text = list[list.size - 1].body!!
         }
-        if (!temp)
-            sendMessage.text = "Hozircha habar yo'q"
         val keyboardMarkup = ReplyKeyboardMarkup()
         val keyboard: MutableList<KeyboardRow> = ArrayList()
         val row = KeyboardRow()
+        if (!temp) {
+            sendMessage.text = "Hozircha habar yo'q"
+            row.add(OFFLINE)
+        } else {
+            row.add(OFFLINE_SESSION)
+            row.add(OFFLINE)
+        }
 
-        row.add(OFFLINE_SESSION)
-        row.add(OFFLINE)
 
         keyboard.add(row)
         keyboardMarkup.keyboard = keyboard
@@ -866,10 +890,10 @@ class MessageHandlerImpl(
     }
 
     private fun sendAnswer(message: Message, sender: AbsSender) {
-        val sendMessage = SendMessage()
         val registerUser = registerUser(message.from)
 
         if (message.hasText()) {
+            val sendMessage = SendMessage()
             val dto = messageService.operatorWriteMsg(
                 OperatorMessageDto(
                     message.text,
@@ -882,6 +906,23 @@ class MessageHandlerImpl(
             sender.execute(sendMessage)
 
         }
+
+        if (message.hasContact()) {
+
+            val sendContact = SendContact()
+            val dto = messageService.operatorWriteMsg(
+                OperatorMessageDto(
+                    message.contact.phoneNumber,
+                    message.from.id,
+                    null
+                )
+            )
+            sendContact.chatId = dto.userChatId.toString()
+            sendContact.firstName = message.contact.firstName
+            sendContact.phoneNumber = message.contact.phoneNumber
+            sender.execute(sendContact)
+        }
+
         if (message.hasAnimation()) {
             val animation = message.animation
 
@@ -1109,8 +1150,7 @@ class MessageHandlerImpl(
 
                 sender.execute(sendMessage)
 
-
-            } else {
+            } else if (message.contact != null && message.contact.userId != registerUser.chatId) {
                 sendMessage.chatId = registerUser.chatId.toString()
                 when (registerUser.language) {
                     LanguageEnum.Uzbek -> sendMessage.text =
@@ -1413,8 +1453,8 @@ class MessageHandlerImpl(
         sendMessage.enableHtml(true)
         sendMessage.chatId = chatId
 
+        val registerUser = registerUser(message.from)
         if (message.hasText()) {
-            val registerUser = registerUser(message.from)
             val text = message.text
 
             if (text == START && registerUser.state == STATE_START) startUser(message, sender)
@@ -1474,9 +1514,7 @@ class MessageHandlerImpl(
                 }
             }
 
-
-        } else if (message.hasContact()) {
-            val registerUser = registerUser(message.from)
+        } else if (registerUser.state == SHARE_CONTACT && message.hasContact()) {
 
             if (registerUser.language == null) {
                 sendMessage.chatId = registerUser.chatId.toString()
@@ -1485,12 +1523,12 @@ class MessageHandlerImpl(
             } else {
                 getContact(message, sender)
             }
-        } else if ((message.hasVoice() || message.hasVideoNote() || message.hasVideo() || message.hasPhoto() || message.hasDocument() || message.hasAudio() || message.hasAnimation() || message.hasSticker()) && registerUser(
+        } else if ((message.hasContact() || message.hasVoice() || message.hasVideoNote() || message.hasVideo() || message.hasPhoto() || message.hasDocument() || message.hasAudio() || message.hasAnimation() || message.hasSticker()) && registerUser(
                 message.from
             ).state == SEND_QUESTION
         ) {
             secondQuestion(message, sender)
-        } else if ((message.hasVoice() || message.hasVideoNote() || message.hasVideo() || message.hasPhoto() || message.hasDocument() || message.hasAudio() || message.hasAnimation() || message.hasSticker()) && registerUser(
+        } else if ((message.hasContact() || message.hasVoice() || message.hasVideoNote() || message.hasVideo() || message.hasPhoto() || message.hasDocument() || message.hasAudio() || message.hasAnimation() || message.hasSticker()) && registerUser(
                 message.from
             ).state == SEND_ANSWER
         ) {
