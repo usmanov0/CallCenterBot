@@ -44,6 +44,8 @@ class Messages(
     @Enumerated(EnumType.STRING)
     var type: MessageType,
     var body: String?,
+    var tgMessageId4User: Long?,
+    var tgMessageId4Oper: Long?,
     var replied: Boolean,
     @Enumerated(EnumType.STRING)
     var messageLanguage: LanguageEnum,
@@ -53,6 +55,8 @@ class Messages(
     var session: Sessions?,
     @Enumerated(EnumType.STRING)
     var fileType: FileType,
+    @ManyToOne
+    var repliedMessageId: Messages?
 ) : BaseEntity()
 
 @Entity
@@ -60,6 +64,7 @@ class Languages(
     @Enumerated(value = EnumType.STRING)
     var name: LanguageEnum,
 ) : BaseEntity()
+
 
 @Entity
 class OperatorsLanguages(
@@ -71,6 +76,6 @@ class OperatorsLanguages(
 class FileEntity(
     var fileName: String,
     var path: String,
-    @Enumerated(value = EnumType.STRING) var contentType: ContentType,
+    var contentType: String,
     @OneToOne var messages: Messages
 ) : BaseEntity()

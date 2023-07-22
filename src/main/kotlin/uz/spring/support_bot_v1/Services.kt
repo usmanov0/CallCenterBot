@@ -11,7 +11,6 @@ import java.util.Date
 
 
 interface UserService {
-    //    fun create(tgUser: ):UserDto
     fun findById(id: Long): UserDto
     fun getAll(pageable: Pageable): Page<UserDto>
 
@@ -28,17 +27,18 @@ interface UserService {
     fun closeSession(operatorChatId: Long): List<MessageReplyDto>?
 
     fun offlineOperator(operatorChatId: Long)
+
+    fun rateOperator(dto: MarkOperatorDto)
 }
 
 interface MessageService {
-    fun userWriteMsg(dto: UserMessageDto): OperatorMessageDto?
+    fun userWriteMsg(dto: RequestMessageDto): ResponseMessageDto?
     fun userWriteFile(dto: UserFileDto): OperatorFileDto?
-    fun operatorWriteMsg(dto: OperatorMessageDto): UserMessageDto
-//    fun findById(id: Long): MessageReplyDto
-//    fun getAll(pageable: Pageable): Page<MessageReplyDto>
+    fun operatorWriteMsg(dto: RequestMessageDto): ResponseMessageDto
+    fun operatorWriteFile(dto: UserFileDto): OperatorFileDto?
+
     fun getAllMessagesNotRepliedByLanguage(operatorId: Long): List<QuestionsForOperatorDto>
-//    fun getAllMessagesBySessionId(sessionId: Long): List<MessageReplyDto>
-//    fun deliverMessage(userId: Long, messageId: Long): MessageReplyDto
+    fun setTgMessageIdOfMessage(messageId: Long, tgMessageIdGeneratedByBot: Long)
 }
 
 interface FileService {
@@ -47,13 +47,6 @@ interface FileService {
     fun readFile(fileName: String) : ByteArray
 }
 
-interface SessionService {
-    //The following methods are implemented in userWriteMsg and operatorWriteMsg methods
-
-    //    fun createChatId(userId: Long, operatorId: Long, chatLanguage: LanguageEnum): Long
-//    fun getActiveChatByUserId(userId: Long, active: Boolean = true): Long     //returns sessionId
-    fun endSession(operatorId: Long)
-}
 
 interface LanguageService {
     fun createLanguage(name: String)
@@ -82,10 +75,6 @@ class UserServiceImpl(
     private val fileService: FileService,
     private val fileRepository: FileRepository
 ) : UserService {
-    /*   override fun create(dto: UserDto):UserDto {
-           if (userRepository.findByChatIdAndDeletedFalse(dto.chatId) != null) throw UserAlreadyExistsException(dto.chatId)
-           dto.run { userRepository.save(toEntity()) }
-       }*/
 
     override fun findById(id: Long) = userRepository.findByChatIdAndDeletedFalse(id)?.let { UserDto.toDto(it) }
         ?: throw UserNotFoundException(id)
@@ -96,6 +85,7 @@ class UserServiceImpl(
     override fun addOperator(chatId: Long) {
         val user = userRepository.findByChatIdAndDeletedFalse(chatId) ?: throw OperatorNotFoundException(chatId)
         user.role = Role.OPERATOR
+        user.state = STATE_OFFLINE
         user.operatorState = OperatorState.NOT_BUSY
         userRepository.save(user)
     }
@@ -120,6 +110,9 @@ class UserServiceImpl(
             operatorChatId
         )
         operator.isOnline = true
+        operator.operatorState = OperatorState.NOT_BUSY
+        operator.state = SEND_ANSWER
+        userRepository.save(operator)
         val languages = operatorsLanguagesRepository.getAllLanguagesByOperatorId(operator.id!!)
         var sessions: Sessions? = null
 
@@ -130,7 +123,7 @@ class UserServiceImpl(
                 break
             }
         }
-        if (sessions != null) {
+        if (sessions != null && sessions.user.chatId != operatorChatId) {
             sessions.operator = operator
             sessionRepository.save(sessions)
             operator.operatorState = OperatorState.BUSY
@@ -159,6 +152,7 @@ class UserServiceImpl(
                 session.endTime = Date()
                 sessionRepository.save(session)
                 operator.operatorState = OperatorState.NOT_BUSY
+                operator.state = SEND_ANSWER
                 userRepository.save(operator)
                 return onlineOperator(operatorChatId)
             }
@@ -176,8 +170,18 @@ class UserServiceImpl(
             }
             operator.operatorState = OperatorState.NOT_BUSY
             operator.isOnline = false
+            operator.state = STATE_OFFLINE
             userRepository.save(operator)
         } ?: throw OperatorNotFoundException(operatorChatId)
+    }
+
+    override fun rateOperator(dto: MarkOperatorDto) {
+        dto.run {
+            sessionRepository.findByUserChatIdAndRateNull(userChatId)?.let { session ->
+                session.rate = dto.mark
+                sessionRepository.save(session)
+            } ?: throw SessionNotFoundException(userChatId)
+        }
     }
 }
 
@@ -189,10 +193,32 @@ class MessageServiceImpl(
     private val operatorsLanguagesRepository: OperatorsLanguagesRepository,
     private val fileService: FileService
 ) : MessageService {
-    override fun userWriteMsg(dto: UserMessageDto): OperatorMessageDto? {
+    @Transactional
+    override fun userWriteMsg(dto: RequestMessageDto): ResponseMessageDto? {
         userRepository.findByChatIdAndDeletedFalse(dto.userChatId)?.let {
             var sessions: Sessions? = sessionRepository.findByUserChatIdAndActiveTrue(dto.userChatId)
-            var operatorMessageDto: OperatorMessageDto? = null
+
+            var repliedMessage: Messages? = null
+            if (dto.repliedMessageTgId != null)
+                repliedMessage = messageRepository.findByTgMessageId4User(dto.repliedMessageTgId)
+
+            val message =
+                Messages(
+                    MessageType.QUESTION,
+                    dto.body,
+                    dto.messageTgId,
+                    null,
+                    false,
+                    LanguageEnum.valueOf(dto.userLanguage!!),
+                    it,
+                    null,
+                    FileType.TEXT,
+                    repliedMessage
+                )
+            messageRepository.save(message)
+
+            var responseMessageDto: ResponseMessageDto? = null
+
             if (sessions == null) {
                 val newSession = Sessions(it, null, LanguageEnum.valueOf(dto.userLanguage), Date(), null, null, true)
                 val operator = userRepository.getOperator(
@@ -204,22 +230,28 @@ class MessageServiceImpl(
                     operator.operatorState = OperatorState.BUSY
                     userRepository.save(operator)
                     newSession.operator = operator
-                    operatorMessageDto = OperatorMessageDto(dto.body, operator.chatId, null)
+                    responseMessageDto =
+                        ResponseMessageDto(operator.chatId, dto.body, message.id!!, repliedMessage?.tgMessageId4Oper)
                 }
                 sessions = sessionRepository.save(newSession)
             } else if (sessions.operator != null) {
-                operatorMessageDto = OperatorMessageDto(dto.body, sessions.operator!!.chatId, null)
+                responseMessageDto = ResponseMessageDto(
+                    sessions.operator!!.chatId,
+                    dto.body,
+                    message.id!!,
+                    repliedMessage?.tgMessageId4Oper
+                )
             }
-            val message =
-                Messages(MessageType.QUESTION, dto.body, false, LanguageEnum.valueOf(dto.userLanguage), it, sessions,FileType.TEXT)
+            message.session = sessions
             messageRepository.save(message)
-            return operatorMessageDto
+            return responseMessageDto
         } ?: throw UserNotFoundException(dto.userChatId)
     }
 
+    @Transactional
     override fun userWriteFile(dto: UserFileDto): OperatorFileDto? {
-        userRepository.findByChatIdAndDeletedFalse(dto.userChatId)?.let {user ->
-            var sessions =  sessionRepository.findByUserChatIdAndActiveTrue(dto.userChatId)
+        userRepository.findByChatIdAndDeletedFalse(dto.chatId)?.let { user ->
+            var sessions =  sessionRepository.findByUserChatIdAndActiveTrue(dto.chatId)
             var operatorFileDto : OperatorFileDto? = null
             if (sessions == null) {
                 val newSession = Sessions(user, null, LanguageEnum.valueOf(dto.userLanguage), Date(), null, null, true)
@@ -228,88 +260,82 @@ class MessageServiceImpl(
                     operator.operatorState = OperatorState.BUSY
                     userRepository.save(operator)
                     newSession.operator = operator
-                    operatorFileDto = OperatorFileDto(dto.fileName, dto.caption, dto.contentType, operator.chatId,fileService.readFile(dto.fileName))
+                    operatorFileDto = OperatorFileDto(dto.fileName, dto.caption, operator.chatId,dto.contentType, null)
                 }
                 sessions =  sessionRepository.save(newSession)
             } else if (sessions.operator != null) {
-                operatorFileDto = OperatorFileDto(dto.fileName, dto.caption, dto.contentType, sessions.operator!!.chatId, null)
+                operatorFileDto = OperatorFileDto(dto.fileName, dto.caption,sessions.operator!!.chatId, dto.contentType, null)
             }
-            var message = Messages(MessageType.QUESTION, dto.caption, false, LanguageEnum.valueOf(dto.userLanguage), user, sessions, FileType.FILE )
+            var message = Messages(MessageType.QUESTION, dto.caption, null, null, false, LanguageEnum.valueOf(dto.userLanguage), user, sessions, FileType.FILE, null)
             message = messageRepository.save(message)
             fileService.writeFile(FileCreateDto(dto.fileName, basePath, dto.contentType, dto.content), message)
             return operatorFileDto
-        } ?: throw UserNotFoundException(dto.userChatId)
+        } ?: throw UserNotFoundException(dto.chatId)
+    }
+
+    override fun operatorWriteFile(dto: UserFileDto): OperatorFileDto? {
+        userRepository.findByChatIdAndDeletedFalse(dto.chatId)?.let { operator ->
+            val sessions = sessionRepository.findByOperatorChatIdAndActiveTrue(dto.chatId)
+            val newMessage = Messages(MessageType.ANSWER, dto.caption, null, null, false, LanguageEnum.valueOf(dto.userLanguage), sessions!!.user, sessions, FileType.FILE, null)
+            val message = messageRepository.save(newMessage)
+            fileService.writeFile(FileCreateDto(dto.fileName, basePath, dto.contentType, dto.content), message)
+            val operatorFileDto = OperatorFileDto(dto.fileName, dto.caption, sessions.user.chatId,dto.contentType,null)
+            return operatorFileDto
+        } ?: throw OperatorNotFoundException(dto.chatId)
     }
 
     @Transactional
-    override fun operatorWriteMsg(dto: OperatorMessageDto): UserMessageDto {
-        userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId)?.let { operator ->
-            val session = sessionRepository.findByOperatorChatIdAndActiveTrue(dto.operatorChatId)
-            val message = Messages(MessageType.ANSWER, dto.body, false, session!!.chatLanguage, session.user, session,FileType.TEXT)
+    override fun operatorWriteMsg(dto: RequestMessageDto): ResponseMessageDto {
+        userRepository.findByChatIdAndDeletedFalse(dto.userChatId)?.let { operator ->
+            var repliedMessage: Messages? = null
+            dto.repliedMessageTgId?.let {
+                repliedMessage = messageRepository.findByTgMessageId4Oper(it)
+            }
+
+            val session = sessionRepository.findByOperatorChatIdAndActiveTrue(dto.userChatId)
+            val message = Messages(
+                MessageType.ANSWER,
+                dto.body,
+                null,
+                dto.messageTgId,
+                false,
+                session!!.chatLanguage,
+                operator/*it was: session.user*/,
+                session,
+                FileType.TEXT,
+                repliedMessage
+            )
             messageRepository.save(message)
-            val userMessageDto = UserMessageDto(dto.body, session.user.chatId, session.chatLanguage.name)
-            return userMessageDto
+
+            return ResponseMessageDto(session.user.chatId, dto.body, message.id!!, repliedMessage?.tgMessageId4User)
         } ?: throw RuntimeException()
     }
-
-//    override fun findById(id: Long): MessageReplyDto =
-//        messageRepository.findByIdAndDeletedFalse(id)?.let { MessageReplyDto.toDto(it) }
-//            ?: throw RuntimeException()
-//
-//    override fun getAll(pageable: Pageable): Page<MessageReplyDto> =
-//        messageRepository.findAllNotDeleted(pageable).map { MessageReplyDto.toDto(it) }
 
     override fun getAllMessagesNotRepliedByLanguage(operatorId: Long): List<QuestionsForOperatorDto> {
         val user = userRepository.findByChatIdAndDeletedFalse(operatorId) ?: throw RuntimeException()
         val baseList = mutableListOf<Messages>()
         val list = operatorsLanguagesRepository.getAllLanguagesByOperatorId(user.id!!)
-//        var queryConditions = ""
-//        var count = 0
         for (lang in list) {
             val messageList = messageRepository.getNotRepliedMessagesForOperator(lang.name.toString())
             baseList.addAll(messageList)
-//            count++
-//            when (lang.name.toString()) {
-//                "Uzbek" -> {
-//                    queryConditions = if (count == 1) queryConditions + "Uzbek"
-//                    else "$queryConditions or message_language=Uzbek"
-//                }
-//
-//                "Russian" -> {
-//                    queryConditions = if (count == 1) queryConditions + "Russian"
-//                    else "$queryConditions or message_language=Russian"
-//                }
-//
-//                "English" -> {
-//                    queryConditions = if (count == 1) queryConditions + "English"
-//                    else "$queryConditions or message_language=English"
-//                }
-//            }
-        }
-//        queryConditions = "$queryConditions)"
 
+        }
         return baseList.map { QuestionsForOperatorDto.toDto(it) }
     }
 
-//    override fun getAllMessagesBySessionId(sessionId: Long): List<MessageReplyDto> =
-//        messageRepository.findAllBySessionId(sessionId).map { MessageReplyDto.toDto(it) }
-//
-//    override fun deliverMessage(userId: Long, messageId: Long): MessageReplyDto {
-//        userRepository.findByChatIdAndDeletedFalse(userId) ?: throw UserNotFoundException(userId)
-//        return messageRepository.findByIdAndDeletedFalse(messageId)?.run { MessageReplyDto(body, createdDate!!) }
-//            ?: throw MessageNotFoundException(messageId)
-//    }
-}
+    override fun setTgMessageIdOfMessage(messageId: Long, tgMessageIdGeneratedByBot: Long) {
+        messageRepository.findByIdAndDeletedFalse(messageId)?.let {
 
-@Service
-class SessionServiceImpl(private val sessionRepository: SessionRepository) : SessionService {
-    override fun endSession(operatorId: Long) {
-//        val session = sessionRepository.findByUserIdAndActiveTrue(operatorId) ?: throw RuntimeException()
-//        session.active = false
-//        sessionRepository.save(session)
+            if (it.tgMessageId4User == null)
+                it.tgMessageId4User = tgMessageIdGeneratedByBot
+            else if (it.tgMessageId4Oper == null)
+                it.tgMessageId4Oper = tgMessageIdGeneratedByBot
+
+            messageRepository.save(it)
+        }
     }
-
 }
+
 
 @Service
 class LanguageServiceImpl(

@@ -30,13 +30,3 @@ enum class OperatorState() {
 enum class FileType() {
     FILE, TEXT
 }
-
-enum class ContentType{
-    PHOTO,
-    VIDEO,
-    VIDEO_NOTE,
-    MUSIC,
-    DOCUMENT,
-    ANIMATION,
-    GIFT
-}

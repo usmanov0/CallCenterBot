@@ -5,8 +5,15 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.getForObject
 import org.telegram.telegrambots.meta.api.methods.GetFile
 import org.telegram.telegrambots.meta.api.methods.send.SendAnimation
+import org.telegram.telegrambots.meta.api.methods.send.SendAudio
+import org.telegram.telegrambots.meta.api.methods.send.SendContact
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
+import org.telegram.telegrambots.meta.api.methods.send.SendSticker
+import org.telegram.telegrambots.meta.api.methods.send.SendVideo
+import org.telegram.telegrambots.meta.api.methods.send.SendVideoNote
+import org.telegram.telegrambots.meta.api.methods.send.SendVoice
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.InputFile
 import org.telegram.telegrambots.meta.api.objects.Message
@@ -44,23 +51,13 @@ class MessageHandlerImpl(
                     null,
                     null,
                     false,
-                    CHOOSE_LANGUAGE,
+                    STATE_START,
                     tgUser.lastName,
                     tgUser.firstName
                 )
             )
     }
 
-    private fun start(message: Message, sender: AbsSender) {
-        val chatId = message.from.id
-        val user = userRepository.findByChatIdAndDeletedFalse(chatId)
-        if (user == null || user.role == Role.USER) {
-            startUser(message, sender)
-        } else {
-            startOperator(message, sender)
-        }
-
-    }
 
     private fun startUser(message: Message, sender: AbsSender) {
 
@@ -68,17 +65,10 @@ class MessageHandlerImpl(
         sendMessage.chatId = message.chatId.toString()
         val firstName = message.chat.firstName
         val registerUser = registerUser(message.from)
-
-        if (registerUser.state == BEFORE_SEND_QUESTION) {
-            when (registerUser.language) {
-                LanguageEnum.Uzbek -> sendMessage.text = SETTINGS_UZ
-                LanguageEnum.English -> sendMessage.text = SETTINGS_EN
-                LanguageEnum.Russian -> sendMessage.text = SETTINGS_RU
-                null -> sendMessage.text = SETTINGS_EN
-            }
-        } else
-            sendMessage.text =
-                """
+        registerUser.state = CHOOSE_LANGUAGE
+        userRepository.save(registerUser)
+        sendMessage.text =
+            """
                         Assalomu alaykum ${firstName}. Men Support botman!
                         Привет ${firstName}! Men Support botman!
                         Hi ${firstName}! Men Support botman!
@@ -107,8 +97,41 @@ class MessageHandlerImpl(
 
     }
 
+    private fun changeLanguage(message: Message, sender: AbsSender) {
+        val sendMessage = SendMessage()
+        sendMessage.chatId = message.chatId.toString()
+        val registerUser = registerUser(message.from)
+        registerUser.state = CHANGE_LANGUAGE
+        userRepository.save(registerUser)
+
+        when (registerUser.language) {
+            LanguageEnum.Uzbek -> sendMessage.text = SETTINGS_UZ
+            LanguageEnum.English -> sendMessage.text = SETTINGS_EN
+            LanguageEnum.Russian -> sendMessage.text = SETTINGS_RU
+            null -> sendMessage.text = SETTINGS_EN
+        }
+
+        val keyboardMarkup = ReplyKeyboardMarkup()
+        val keyboard: MutableList<KeyboardRow> = ArrayList()
+        val row = KeyboardRow()
+
+        row.add(UZBEK_)
+        row.add(RUSSIAN_)
+        row.add(ENGLISH_)
+
+        keyboard.add(row)
+        keyboardMarkup.keyboard = keyboard
+        keyboardMarkup.resizeKeyboard = true
+        sendMessage.replyMarkup = keyboardMarkup
+
+        sender.execute(sendMessage)
+    }
+
     private fun startOperator(message: Message, sender: AbsSender) {
         val sendMessage = SendMessage()
+        val registerUser = registerUser(message.from)
+        registerUser.state = AFTER_START_OPERATOR
+        userRepository.save(registerUser)
         sendMessage.chatId = message.chatId.toString()
         sendMessage.text = "Ishni boshlash uchun Online tugmasini bosing !"
 
@@ -141,89 +164,86 @@ class MessageHandlerImpl(
         registerUser.language = language
         userRepository.save(registerUser)
 
-        if (registerUser.state == BEFORE_SEND_QUESTION) {
+        registerUser.state = SHARE_CONTACT
+        userRepository.save(registerUser)
+
+        if (registerUser.phone != null)
             getContact(message, sender)
-        } else {
-            registerUser.state = SHARE_CONTACT
-            userRepository.save(registerUser)
+        else {
 
-            if (registerUser.phone != null)
-                getContact(message, sender)
-            else {
+            val language1 = registerUser.language!!  //   [Russian]
 
-                val language1 = registerUser.language!!  //   [Russian]
+            when (language1.toString()) {
+                UZBEK -> {
+                    sendMessage.text = SHARE_CONTACT_UZ
 
-                when (language1.toString()) {
-                    UZBEK -> {
-                        sendMessage.text = SHARE_CONTACT_UZ
+                    val shareContactButton = KeyboardButton()
+                    shareContactButton.text = SHARE_UZ
+                    shareContactButton.requestContact = true
 
-                        val shareContactButton = KeyboardButton()
-                        shareContactButton.text = SHARE_UZ
-                        shareContactButton.requestContact = true
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
 
-                        val keyboardMarkup = ReplyKeyboardMarkup()
-                        val keyboard: MutableList<KeyboardRow> = ArrayList()
-                        val row = KeyboardRow()
-                        val row1 = KeyboardRow()
+                    row.add(shareContactButton)
+                    row1.add(BACK_UZ)
 
-                        row.add(shareContactButton)
-                        row1.add(BACK_UZ)
-
-                        keyboard.add(row)
-                        keyboard.add(row1)
-                        keyboardMarkup.keyboard = keyboard
-                        keyboardMarkup.resizeKeyboard = true
-                        sendMessage.replyMarkup = keyboardMarkup
-                    }
-
-                    RUSSIAN -> {
-                        sendMessage.text = SHARE_CONTACT_RU
-
-                        val shareContactButton = KeyboardButton()
-                        shareContactButton.text = SHARE_RU
-                        shareContactButton.requestContact = true
-
-                        val keyboardMarkup = ReplyKeyboardMarkup()
-                        val keyboard: MutableList<KeyboardRow> = ArrayList()
-
-                        val row = KeyboardRow()
-                        val row1 = KeyboardRow()
-
-                        row.add(shareContactButton)
-                        row1.add(BACK_RU)
-
-                        keyboard.add(row)
-                        keyboard.add(row1)
-                        keyboardMarkup.keyboard = keyboard
-                        keyboardMarkup.resizeKeyboard = true
-                        sendMessage.replyMarkup = keyboardMarkup
-                    }
-
-                    ENGLISH -> {
-                        sendMessage.text = SHARE_CONTACT_EN
-
-                        val shareContactButton = KeyboardButton()
-                        shareContactButton.text = SHARE_EN
-                        shareContactButton.requestContact = true
-
-                        val keyboardMarkup = ReplyKeyboardMarkup()
-                        val keyboard: MutableList<KeyboardRow> = ArrayList()
-                        val row = KeyboardRow()
-                        val row1 = KeyboardRow()
-
-                        row.add(shareContactButton)
-                        row1.add(BACK_EN)
-
-                        keyboard.add(row)
-                        keyboard.add(row1)
-                        keyboardMarkup.keyboard = keyboard
-                        keyboardMarkup.resizeKeyboard = true
-                        sendMessage.replyMarkup = keyboardMarkup
-                    }
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage.replyMarkup = keyboardMarkup
                 }
-                sender.execute(sendMessage)
+
+                RUSSIAN -> {
+                    sendMessage.text = SHARE_CONTACT_RU
+
+                    val shareContactButton = KeyboardButton()
+                    shareContactButton.text = SHARE_RU
+                    shareContactButton.requestContact = true
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
+
+                    row.add(shareContactButton)
+                    row1.add(BACK_RU)
+
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage.replyMarkup = keyboardMarkup
+                }
+
+                ENGLISH -> {
+                    sendMessage.text = SHARE_CONTACT_EN
+
+                    val shareContactButton = KeyboardButton()
+                    shareContactButton.text = SHARE_EN
+                    shareContactButton.requestContact = true
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
+
+                    row.add(shareContactButton)
+                    row1.add(BACK_EN)
+
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage.replyMarkup = keyboardMarkup
+                }
             }
+            sender.execute(sendMessage)
         }
+
 
     }
 
@@ -272,97 +292,291 @@ class MessageHandlerImpl(
             when (language1.toString()) {
                 UZBEK -> {
                     val userWriteMsg = messageService.userWriteMsg(
-                        UserMessageDto(
-                            message.text,
+                        RequestMessageDto(
                             registerUser.chatId,
-                            registerUser.language!!.name
+                            message.text,
+                            registerUser.language!!.name,
+                            message.messageId.toLong(),
+                            message.replyToMessage?.messageId?.toLong()
                         )
                     )
                     if (userWriteMsg != null) {
-                        val operatorChatId = userWriteMsg.operatorChatId
+                        val operatorChatId = userWriteMsg.userChatId
                         sendMessage.chatId = operatorChatId.toString()
-                        sendMessage.text = message.text
-                        sender.execute(sendMessage)
+                        sendMessage.text = userWriteMsg.messageBody
+                        sendMessage.replyToMessageId = userWriteMsg.repliedMessageTgId?.toInt()
+                        val execute = sender.execute(sendMessage)
+                        messageService.setTgMessageIdOfMessage(userWriteMsg.messageId, execute.messageId.toLong())
                     }
                 }
 
                 RUSSIAN -> {
                     val userWriteMsg = messageService.userWriteMsg(
-                        UserMessageDto(
-                            message.text,
+                        RequestMessageDto(
                             registerUser.chatId,
-                            registerUser.language!!.name
+                            message.text,
+                            registerUser.language!!.name,
+                            message.messageId.toLong(),
+                            message.replyToMessage?.messageId?.toLong()
                         )
                     )
                     if (userWriteMsg != null) {
-                        val operatorChatId = userWriteMsg.operatorChatId
+                        val operatorChatId = userWriteMsg.userChatId
                         sendMessage.chatId = operatorChatId.toString()
-                        sendMessage.text = message.text
-                        sender.execute(sendMessage)
+                        sendMessage.text = userWriteMsg.messageBody
+                        sendMessage.replyToMessageId = userWriteMsg.repliedMessageTgId?.toInt()
+                        val execute = sender.execute(sendMessage)
+                        messageService.setTgMessageIdOfMessage(userWriteMsg.messageId, execute.messageId.toLong())
                     }
                 }
 
                 ENGLISH -> {
                     val userWriteMsg = messageService.userWriteMsg(
-                        UserMessageDto(
-                            message.text,
+                        RequestMessageDto(
                             registerUser.chatId,
-                            registerUser.language!!.name
+                            message.text,
+                            registerUser.language!!.name,
+                            message.messageId.toLong(),
+                            message.replyToMessage?.messageId?.toLong()
                         )
                     )
                     if (userWriteMsg != null) {
-                        val operatorChatId = userWriteMsg.operatorChatId
+                        val operatorChatId = userWriteMsg.userChatId
                         sendMessage.chatId = operatorChatId.toString()
-                        sendMessage.text = message.text
-                        sender.execute(sendMessage)
+                        sendMessage.text = userWriteMsg.messageBody
+                        sendMessage.replyToMessageId = userWriteMsg.repliedMessageTgId?.toInt()
+                        val execute = sender.execute(sendMessage)
+                        messageService.setTgMessageIdOfMessage(userWriteMsg.messageId, execute.messageId.toLong())
                     }
                 }
 
             }
         }
-        if (message.hasAnimation()) {
-            val sendAnimation = SendAnimation()
+        else if (message.hasAnimation()) {
             val animation = message.animation
 
             val content = getFromTelegram(animation.fileId, sender)
+            val list = animation.mimetype.split("/")
+            val type = list[list.size - 1]
+
 
             val fileDto = messageService.userWriteFile(
                 UserFileDto(
-                    "${animation.fileUniqueId}.gif",
+                    "${animation.fileUniqueId}.${type}",
                     null,
-                    ContentType.ANIMATION,
+                    "ANIMATION",
                     registerUser.chatId,
                     registerUser.language!!.name,
                     content
                 )
             )
             if (fileDto != null) {
-//                sendAnimation.chatId = fileDto.operatorChatId.toString()
-//                val inputFile = InputFile(basePath + "\\" + fileDto.fileName)
-//                sendAnimation.animation = inputFile
-                val sendAnimation = SendAnimation(fileDto.operatorChatId.toString(), InputFile(File(basePath + "\\" + fileDto.fileName)))
+                val sendAnimation = SendAnimation(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
                 sender.execute(sendAnimation)
             }
 
+        }
+        else if (message.hasContact()) {
+            val contact = message.contact
+            val sendContact = SendContact()
+            val userWriteMsg = messageService.userWriteMsg(
+//                UserMessageDto(
+//                    contact.phoneNumber,
+//                    registerUser.chatId,
+//                    registerUser.language!!.name
+//                )
+            RequestMessageDto(
+                registerUser.chatId,
+                message.contact.phoneNumber,
+                registerUser.language!!.name,
+                message.messageId.toLong(),
+                message.replyToMessage?.messageId?.toLong()
+            )
+            )
+            if (userWriteMsg != null) {
+                val operatorChatId = userWriteMsg.userChatId
+                sendContact.chatId = operatorChatId.toString()
+                sendContact.firstName = registerUser.firstName
+                sendContact.phoneNumber = contact.phoneNumber
+                sender.execute(sendContact)
+            }
 
-        } else if (message.hasAudio()) {
-//            val sendMessage:SendMessage()
 
-        } else if (message.hasDocument()) {
+        }
+        else if (message.hasAudio()) {
+            val audio = message.audio
 
-        } else if (message.hasPhoto()) {
-            val sendPhoto = SendPhoto()
-            sendPhoto.chatId = "341330802"
-            val inputFile = InputFile("C:\\Users\\humoy\\IdeaProjects\\kotlin\\support_bot_v1\\files\\3.2.png")
+            val content = getFromTelegram(audio.fileId, sender)
+            val list = audio.mimeType.split("/")
+            val type = list[list.size - 1]
 
-            sendPhoto.photo = inputFile
-            sender.execute(sendPhoto)
+            val fileDto = messageService.userWriteFile(
+                UserFileDto(
+                    "${audio.fileUniqueId}.${type}",
+                    null,
+                    "AUDIO",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendAudio = SendAudio(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendAudio)
+            }
 
-        } else if (message.hasVideo()) {
 
-        } else if (message.hasVideoNote()) {
+        }
+        else if (message.hasDocument()) {
+            val document = message.document
 
-        } else if (message.hasVoice()) {
+            val content = getFromTelegram(document.fileId, sender)
+            val list = document.mimeType.split("/")
+            val type = list[list.size - 1]
+
+            val fileDto = messageService.userWriteFile(
+                UserFileDto(
+                    "${document.fileName}--${document.fileUniqueId}.${type}",
+                    null,
+                    "DOCUMENT",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendDocument = SendDocument(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendDocument)
+            }
+
+
+        }
+        else if (message.hasPhoto()) {
+            val photo = message.photo
+
+            val content = getFromTelegram(photo[1].fileId, sender)
+            val fileDto = messageService.userWriteFile(
+                UserFileDto(
+                    "${photo[1].fileUniqueId}.png",
+                    null,
+                    "PHOTO",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendPhoto = SendPhoto(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendPhoto)
+            }
+
+        }
+        else if (message.hasVideo()) {
+            val video = message.video
+
+            val content = getFromTelegram(video.fileId, sender)
+
+            val fileDto = messageService.userWriteFile(
+                UserFileDto(
+                    "${video.fileUniqueId}.mp4",
+                    null,
+                    "VIDEO",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendVideo = SendVideo(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendVideo)
+            }
+
+        }
+        else if (message.hasVideoNote()) {
+            val videoNote = message.videoNote
+
+            val content = getFromTelegram(videoNote.fileId, sender)
+
+            val fileDto = messageService.userWriteFile(
+                UserFileDto(
+                    videoNote.fileUniqueId,
+                    null,
+                    "VIDEO_NOTE",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendVideoNote = SendVideoNote(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendVideoNote)
+            }
+
+        }
+        else if (message.hasSticker()) {
+            val sticker = message.sticker
+
+            val content = getFromTelegram(sticker.fileId, sender)
+
+            val fileDto = messageService.userWriteFile(
+                UserFileDto(
+                    sticker.fileUniqueId,
+                    null,
+                    "STICKER",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendSticker = SendSticker(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendSticker)
+            }
+
+        }
+        else if (message.hasVoice()) {
+            val voice = message.voice
+
+            val content = getFromTelegram(voice.fileId, sender)
+
+            val fileDto = messageService.userWriteFile(
+                UserFileDto(
+                    "${voice.fileUniqueId}.ogg",
+                    null,
+                    "VOICE",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendVoice = SendVoice(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendVoice)
+            }
 
         }
 
@@ -384,29 +598,444 @@ class MessageHandlerImpl(
         if (list != null) {
             temp = true
             for (i in 0..list.size - 2) {
-                sendMessage.text = list[i].body!!
+                val item = list[i].fileDto
+                if (item != null) {
+                    when (item.contentType) {
+                        "VIDEO" -> {
+                            val sendVideo = SendVideo(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendVideo.replyMarkup = keyboardMarkup
+                            sender.execute(sendVideo)
+
+                        }
+
+                        "DOCUMENT" -> {
+                            val sendDocument = SendDocument(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendDocument.replyMarkup = keyboardMarkup
+
+                            sender.execute(sendDocument)
+
+
+                        }
+
+                        "ANIMATION" -> {
+                            val sendAnimation = SendAnimation(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendAnimation.replyMarkup = keyboardMarkup
+
+                            sender.execute(sendAnimation)
+                        }
+
+                        "VOICE" -> {
+                            val sendVoice = SendVoice(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendVoice.replyMarkup = keyboardMarkup
+
+                            sender.execute(sendVoice)
+
+
+                        }
+
+                        "STICKER" -> {
+                            val sendSticker = SendSticker(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendSticker.replyMarkup = keyboardMarkup
+
+                            sender.execute(sendSticker)
+
+
+                        }
+
+                        "VIDEO_NOTE" -> {
+                            val sendVideoNote = SendVideoNote(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendVideoNote.replyMarkup = keyboardMarkup
+                            sender.execute(sendVideoNote)
+
+                        }
+
+                        "AUDIO" -> {
+                            val sendAudio = SendAudio(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendAudio.replyMarkup = keyboardMarkup
+
+                            sender.execute(sendAudio)
+
+
+                        }
+
+                        "PHOTO" -> {
+                            val sendPhoto = SendPhoto(
+                                operatorChatId.toString(),
+                                InputFile(File(basePath + "\\" + item.fileName))
+                            )
+
+                            val keyboardMarkup = ReplyKeyboardMarkup()
+                            val keyboard: MutableList<KeyboardRow> = ArrayList()
+                            val row = KeyboardRow()
+                            val row1 = KeyboardRow()
+
+                            row.add(OFFLINE_SESSION)
+                            row1.add(OFFLINE)
+
+                            keyboard.add(row)
+                            keyboard.add(row1)
+                            keyboardMarkup.keyboard = keyboard
+                            keyboardMarkup.resizeKeyboard = true
+                            sendPhoto.replyMarkup = keyboardMarkup
+
+                            sender.execute(sendPhoto)
+                        }
+                    }
+                } else {
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
+                    sendMessage.text = list[i].body!!
+
+                    row.add(OFFLINE_SESSION)
+                    row1.add(OFFLINE)
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage.replyMarkup = keyboardMarkup
+                    sender.execute(sendMessage)
+                }
+            }
+            val item = list[list.size - 1].fileDto
+            if (item != null) {
+                when (item.contentType) {
+                    "VIDEO" -> {
+                        val sendVideo = SendVideo(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendVideo.replyMarkup = keyboardMarkup
+
+                        sender.execute(sendVideo)
+
+                    }
+
+                    "DOCUMENT" -> {
+                        val sendDocument = SendDocument(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendDocument.replyMarkup = keyboardMarkup
+
+                        sender.execute(sendDocument)
+
+
+                    }
+
+                    "ANIMATION" -> {
+                        val sendAnimation = SendAnimation(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendAnimation.replyMarkup = keyboardMarkup
+
+                        sender.execute(sendAnimation)
+                    }
+
+                    "VOICE" -> {
+                        val sendVoice = SendVoice(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendVoice.replyMarkup = keyboardMarkup
+
+                        sender.execute(sendVoice)
+
+
+                    }
+
+                    "STICKER" -> {
+                        val sendSticker = SendSticker(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendSticker.replyMarkup = keyboardMarkup
+
+                        sender.execute(sendSticker)
+
+
+                    }
+
+                    "VIDEO_NOTE" -> {
+                        val sendVideoNote = SendVideoNote(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendVideoNote.replyMarkup = keyboardMarkup
+
+                        sender.execute(sendVideoNote)
+
+
+                    }
+
+                    "AUDIO" -> {
+                        val sendAudio = SendAudio(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendAudio.replyMarkup = keyboardMarkup
+
+                        sender.execute(sendAudio)
+
+
+                    }
+
+                    "PHOTO" -> {
+                        val sendPhoto = SendPhoto(
+                            operatorChatId.toString(),
+                            InputFile(File(basePath + "\\" + item.fileName))
+                        )
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendPhoto.replyMarkup = keyboardMarkup
+
+                        sender.execute(sendPhoto)
+                    }
+                }
+            } else {
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+                sendMessage.text = list[list.size - 1].body!!
+                row.add(OFFLINE_SESSION)
+                row1.add(OFFLINE)
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage.replyMarkup = keyboardMarkup
                 sender.execute(sendMessage)
             }
-            sendMessage.text = list[list.size - 1].body!!
         }
-        if (!temp)
+        if (!temp) {
+            val keyboardMarkup = ReplyKeyboardMarkup()
+            val keyboard: MutableList<KeyboardRow> = ArrayList()
+            val row1 = KeyboardRow()
             sendMessage.text = "Sizda hozircha habar yoq"
-
-        val keyboardMarkup = ReplyKeyboardMarkup()
-        val keyboard: MutableList<KeyboardRow> = ArrayList()
-        val row = KeyboardRow()
-        val row1 = KeyboardRow()
-
-        row.add(OFFLINE_SESSION)
-        row1.add(OFFLINE)
-
-        keyboard.add(row)
-        keyboard.add(row1)
-        keyboardMarkup.keyboard = keyboard
-        keyboardMarkup.resizeKeyboard = true
-        sendMessage.replyMarkup = keyboardMarkup
-        sender.execute(sendMessage)
+            row1.add(OFFLINE)
+            keyboard.add(row1)
+            keyboardMarkup.keyboard = keyboard
+            keyboardMarkup.resizeKeyboard = true
+            sendMessage.replyMarkup = keyboardMarkup
+            sender.execute(sendMessage)
+        }
     }
+
 
     private fun closeChat(message: Message, sender: AbsSender) {
         var temp: Boolean = false
@@ -418,23 +1047,24 @@ class MessageHandlerImpl(
             val sendMessage1 = SendMessage()
             sendMessage1.chatId = chatId.toString()
             val user = it.user
-            user.state = BEFORE_SEND_QUESTION
+            user.state = RATE_OPERATOR
             userRepository.save(user)
 
             when (it.chatLanguage) {
                 LanguageEnum.Uzbek -> {
-                    sendMessage1.text = "Suhbat yakunlandi !"
+                    sendMessage1.text = "Operatorni baholang !"
 
                     val keyboardMarkup = ReplyKeyboardMarkup()
                     val keyboard: MutableList<KeyboardRow> = ArrayList()
                     val row = KeyboardRow()
-                    val row1 = KeyboardRow()
 
-                    row.add(SEND_QUESTION_UZ)
-                    row.add(SETTING_UZ)
+                    row.add(ONE)
+                    row.add(TWO)
+                    row.add(THREE)
+                    row.add(FOUR)
+                    row.add(FIVE)
 
                     keyboard.add(row)
-                    keyboard.add(row1)
                     keyboardMarkup.keyboard = keyboard
                     keyboardMarkup.resizeKeyboard = true
                     sendMessage1.replyMarkup = keyboardMarkup
@@ -444,15 +1074,18 @@ class MessageHandlerImpl(
                 }
 
                 LanguageEnum.English -> {
-                    sendMessage1.text = "Suhbat yakunlandi !"
+                    sendMessage1.text = "Rate the operator !"
 
                     val keyboardMarkup = ReplyKeyboardMarkup()
                     val keyboard: MutableList<KeyboardRow> = ArrayList()
                     val row = KeyboardRow()
                     val row1 = KeyboardRow()
 
-                    row.add(SEND_QUESTION_EN)
-                    row.add(SETTING_EN)
+                    row.add(ONE)
+                    row.add(TWO)
+                    row.add(THREE)
+                    row.add(FOUR)
+                    row.add(FIVE)
 
                     keyboard.add(row)
                     keyboard.add(row1)
@@ -464,15 +1097,18 @@ class MessageHandlerImpl(
                 }
 
                 LanguageEnum.Russian -> {
-                    sendMessage1.text = "Suhbat yakunlandi !"
+                    sendMessage1.text = "Оцените оператора !"
 
                     val keyboardMarkup = ReplyKeyboardMarkup()
                     val keyboard: MutableList<KeyboardRow> = ArrayList()
                     val row = KeyboardRow()
                     val row1 = KeyboardRow()
 
-                    row.add(SEND_QUESTION_RU)
-                    row.add(SETTING_RU)
+                    row.add(ONE)
+                    row.add(TWO)
+                    row.add(THREE)
+                    row.add(FOUR)
+                    row.add(FIVE)
 
                     keyboard.add(row)
                     keyboard.add(row1)
@@ -495,14 +1131,17 @@ class MessageHandlerImpl(
             }
             sendMessage.text = list[list.size - 1].body!!
         }
-        if (!temp)
-            sendMessage.text = "Hozircha habar yo'q"
         val keyboardMarkup = ReplyKeyboardMarkup()
         val keyboard: MutableList<KeyboardRow> = ArrayList()
         val row = KeyboardRow()
+        if (!temp) {
+            sendMessage.text = "Hozircha habar yo'q"
+            row.add(OFFLINE)
+        } else {
+            row.add(OFFLINE_SESSION)
+            row.add(OFFLINE)
+        }
 
-        row.add(OFFLINE_SESSION)
-        row.add(OFFLINE)
 
         keyboard.add(row)
         keyboardMarkup.keyboard = keyboard
@@ -520,18 +1159,241 @@ class MessageHandlerImpl(
     }
 
     private fun sendAnswer(message: Message, sender: AbsSender) {
-        val sendMessage = SendMessage()
+        val registerUser = registerUser(message.from)
 
-        val dto = messageService.operatorWriteMsg(
-            OperatorMessageDto(
-                message.text,
-                message.from.id,
-                null
+        if (message.hasText()) {
+            val sendMessage = SendMessage()
+            val dto = messageService.operatorWriteMsg(
+                RequestMessageDto(
+                    message.from.id,
+                    message.text,
+                    null,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
+                )
             )
-        )
-        sendMessage.chatId = dto.userChatId.toString()
-        sendMessage.text = message.text
-        sender.execute(sendMessage)
+            sendMessage.chatId = dto.userChatId.toString()
+            sendMessage.text = message.text
+            sendMessage.replyToMessageId = dto.repliedMessageTgId?.toInt()
+            val execute = sender.execute(sendMessage)
+            messageService.setTgMessageIdOfMessage(dto.messageId, execute.messageId.toLong())
+
+        }
+
+        if (message.hasContact()) {
+
+            val sendContact = SendContact()
+            val dto = messageService.operatorWriteMsg(
+//                OperatorMessageDto(
+//                    message.contact.phoneNumber,
+//                    message.from.id,
+//                    null
+//                )
+                RequestMessageDto(
+                    message.from.id,
+                    message.contact.phoneNumber,
+                    null,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
+                )
+            )
+            sendContact.chatId = dto.userChatId.toString()
+            sendContact.firstName = message.contact.firstName
+            sendContact.phoneNumber = message.contact.phoneNumber
+            sendContact.replyToMessageId = dto.repliedMessageTgId?.toInt()
+            val execute = sender.execute(sendContact)
+            messageService.setTgMessageIdOfMessage(dto.messageId, execute.messageId.toLong())
+        }
+
+        if (message.hasAnimation()) {
+            val animation = message.animation
+
+            val content = getFromTelegram(animation.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    "${animation.fileUniqueId}.gif",
+                    null,
+                    "ANIMATION",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendAnimation = SendAnimation(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendAnimation)
+            }
+
+
+        } else if (message.hasAudio()) {
+            val audio = message.audio
+
+            val content = getFromTelegram(audio.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    audio.fileUniqueId,
+                    null,
+                    "MUSIC",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendAudio = SendAudio(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendAudio)
+            }
+
+
+        } else if (message.hasDocument()) {
+            val document = message.document
+
+            val content = getFromTelegram(document.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    document.fileUniqueId,
+                    null,
+                    "DOCUMENT",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendDocument = SendDocument(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendDocument)
+            }
+
+
+        } else if (message.hasPhoto()) {
+            val photo = message.photo
+
+            val content = getFromTelegram(photo[1].fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    "${photo[1].fileUniqueId}.png",
+                    null,
+                    "PHOTO",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendPhoto = SendPhoto(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendPhoto)
+            }
+
+        } else if (message.hasVideo()) {
+            val video = message.video
+
+            val content = getFromTelegram(video.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    "${video.fileUniqueId}.mp4",
+                    null,
+                    "VIDEO",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendVideo = SendVideo(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendVideo)
+            }
+
+        } else if (message.hasVideoNote()) {
+            val videoNote = message.videoNote
+
+            val content = getFromTelegram(videoNote.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    videoNote.fileUniqueId,
+                    null,
+                    "VIDEO_NOTE",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendVideoNote = SendVideoNote(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendVideoNote)
+            }
+
+        } else if (message.hasSticker()) {
+            val sticker = message.sticker
+
+            val content = getFromTelegram(sticker.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    sticker.fileUniqueId,
+                    null,
+                    "STICKER",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendSticker = SendSticker(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendSticker)
+            }
+
+        } else if (message.hasVoice()) {
+            val voice = message.voice
+
+            val content = getFromTelegram(voice.fileId, sender)
+
+            val fileDto = messageService.operatorWriteFile(
+                UserFileDto(
+                    "${voice.fileUniqueId}.ogg",
+                    null,
+                    "VOICE",
+                    registerUser.chatId,
+                    registerUser.language!!.name,
+                    content
+                )
+            )
+            if (fileDto != null) {
+                val sendVoice = SendVoice(
+                    fileDto.chatId.toString(),
+                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                )
+                sender.execute(sendVoice)
+            }
+
+        }
+
 
     }
 
@@ -539,6 +1401,88 @@ class MessageHandlerImpl(
         val sendMessage = SendMessage()
         val operatorChatId = message.from.id
         sendMessage.chatId = operatorChatId.toString()
+
+
+        sessionRepository.findByOperatorChatIdAndActiveTrue(operatorChatId)?.let {
+            val chatId = it.user.chatId
+            val sendMessage1 = SendMessage()
+            sendMessage1.chatId = chatId.toString()
+            val user = it.user
+            user.state = RATE_OPERATOR
+            userRepository.save(user)
+
+            when (it.chatLanguage) {
+                LanguageEnum.Uzbek -> {
+                    sendMessage1.text = "Operatorni baholang !"
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+
+                    row.add(ONE)
+                    row.add(TWO)
+                    row.add(THREE)
+                    row.add(FOUR)
+                    row.add(FIVE)
+
+                    keyboard.add(row)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage1.replyMarkup = keyboardMarkup
+
+                    sender.execute(sendMessage1)
+
+                }
+
+                LanguageEnum.English -> {
+                    sendMessage1.text = "Rate the operator !"
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
+
+                    row.add(ONE)
+                    row.add(TWO)
+                    row.add(THREE)
+                    row.add(FOUR)
+                    row.add(FIVE)
+
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage1.replyMarkup = keyboardMarkup
+
+                    sender.execute(sendMessage1)
+                }
+
+                LanguageEnum.Russian -> {
+                    sendMessage1.text = "Оцените оператора !"
+
+                    val keyboardMarkup = ReplyKeyboardMarkup()
+                    val keyboard: MutableList<KeyboardRow> = ArrayList()
+                    val row = KeyboardRow()
+                    val row1 = KeyboardRow()
+
+                    row.add(ONE)
+                    row.add(TWO)
+                    row.add(THREE)
+                    row.add(FOUR)
+                    row.add(FIVE)
+
+                    keyboard.add(row)
+                    keyboard.add(row1)
+                    keyboardMarkup.keyboard = keyboard
+                    keyboardMarkup.resizeKeyboard = true
+                    sendMessage1.replyMarkup = keyboardMarkup
+
+                    sender.execute(sendMessage1)
+                }
+            }
+        }
+
+
         userService.offlineOperator(operatorChatId)
         sendMessage.text = "Ish yakunlandi !"
 
@@ -559,40 +1503,247 @@ class MessageHandlerImpl(
         val registerUser = registerUser(message.from)
         val sendMessage = SendMessage()
         if (registerUser.state == SHARE_CONTACT) {
-            val phone: String = if (message.hasContact())
-                message.contact.phoneNumber
-            else {
-                message.text
-            }
-            val language1 = registerUser.language!!
-            sendMessage.chatId = message.from.id.toString()
-
-            val regex = Regex("^(\\+998|998)\\d{9}$")
-            val matches = regex.matches(phone.trim(' '))
-            if (matches) {
+            if (message.contact != null && message.contact.userId == registerUser.chatId) {
 
                 registerUser.state = BEFORE_SEND_QUESTION
-                registerUser.phone = phone
+                registerUser.phone = message.contact.phoneNumber
                 userRepository.save(registerUser)
 
-                temp(sendMessage, language1)
+                temp(sendMessage, registerUser.language!!)
+                sendMessage.chatId = message.from.id.toString()
 
                 sender.execute(sendMessage)
 
-            } else {
+            } else if (message.contact != null && message.contact.userId != registerUser.chatId) {
+                sendMessage.chatId = registerUser.chatId.toString()
                 when (registerUser.language) {
-                    LanguageEnum.Uzbek -> sendMessage.text = "Telefoninggizni ushbu ko'rinishda kiriting 998901234567"
-                    LanguageEnum.English -> sendMessage.text = "Enter your phone in this view 998901234567"
-                    LanguageEnum.Russian -> sendMessage.text = "Введите свой телефон в этом представлении 998901234567"
+                    LanguageEnum.Uzbek -> sendMessage.text =
+                        "Iltimos o'zinggizni telefon raqaminggizni kiriting !"
+
+                    LanguageEnum.English -> sendMessage.text = "Please enter your phone number!"
+                    LanguageEnum.Russian -> sendMessage.text =
+                        "Пожалуйста введите ваш номер телефона!"
+
                     else -> {}
                 }
                 sender.execute(sendMessage)
             }
-        } else if (registerUser.state == BEFORE_SEND_QUESTION) {
+            if (message.text != null) {
+                val phone = message.text
+                val language1 = registerUser.language!!
+                sendMessage.chatId = message.from.id.toString()
+
+                val regex = Regex("^(\\+998|998)\\d{9}$")
+                val matches = regex.matches(phone)
+                if (matches) {
+
+                    registerUser.state = BEFORE_SEND_QUESTION
+                    registerUser.phone = phone
+                    userRepository.save(registerUser)
+
+                    temp(sendMessage, language1)
+
+                    sender.execute(sendMessage)
+
+                } else {
+                    when (registerUser.language) {
+                        LanguageEnum.Uzbek -> sendMessage.text =
+                            "Telefoninggizni ushbu ko'rinishda kiriting 998901234567"
+
+                        LanguageEnum.English -> sendMessage.text = "Enter your phone in this view 998901234567"
+                        LanguageEnum.Russian -> sendMessage.text =
+                            "Введите свой телефон в этом представлении 998901234567"
+
+                        else -> {}
+                    }
+                    sender.execute(sendMessage)
+                }
+            }
+
+
+        }
+        /*else if (registerUser.state == BEFORE_SEND_QUESTION) {
             sendMessage.chatId = registerUser.chatId.toString()
             temp(sendMessage, registerUser.language!!)
             sender.execute(sendMessage)
+        }*/
+    }
+
+    private fun option(message: Message, sender: AbsSender) {
+        val from = message.from
+
+        val rate = message.text
+        var rate1 : Short? = null
+        if (rate == ONE || rate == TWO || rate == THREE || rate == FOUR || rate == FIVE) {
+            rate1 = rate.toShort()
+        }else {
+            rate1 = -1
         }
+        userService.rateOperator(
+            MarkOperatorDto(
+                from.id,
+                rate1
+            )
+        )
+        val registerUser = registerUser(from)
+
+        val sendMessage1 = SendMessage()
+        sendMessage1.chatId = registerUser.chatId.toString()
+
+        registerUser.state = BEFORE_SEND_QUESTION
+        userRepository.save(registerUser)
+
+        when (registerUser.language) {
+            LanguageEnum.Uzbek -> {
+                sendMessage1.text = "Suhbat yakunlandi !"
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_UZ)
+                row.add(SETTING_UZ)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage1.replyMarkup = keyboardMarkup
+
+                sender.execute(sendMessage1)
+
+            }
+
+            LanguageEnum.English -> {
+                sendMessage1.text = "The conversation is over !"
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_EN)
+                row.add(SETTING_EN)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage1.replyMarkup = keyboardMarkup
+
+                sender.execute(sendMessage1)
+            }
+
+            LanguageEnum.Russian -> {
+                sendMessage1.text = "Разговор окончен !"
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_RU)
+                row.add(SETTING_RU)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage1.replyMarkup = keyboardMarkup
+
+                sender.execute(sendMessage1)
+            }
+
+            else -> {}
+        }
+
+    }
+
+    private fun optionAfterChangedLanguage(message: Message, sender: AbsSender) {
+        val from = message.from
+        val registerUser = registerUser(from)
+
+        val language = when (message.text) {
+            UZBEK_ -> LanguageEnum.Uzbek
+            RUSSIAN_ -> LanguageEnum.Russian
+            ENGLISH_ -> LanguageEnum.English
+            else -> registerUser.language
+        }
+        registerUser.language = language
+        userRepository.save(registerUser)
+
+        val sendMessage1 = SendMessage()
+        sendMessage1.chatId = registerUser.chatId.toString()
+
+        registerUser.state = BEFORE_SEND_QUESTION
+        userRepository.save(registerUser)
+
+        when (registerUser.language) {
+            LanguageEnum.Uzbek -> {
+                sendMessage1.text = CHOOSE_OPTION_UZ
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_UZ)
+                row.add(SETTING_UZ)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage1.replyMarkup = keyboardMarkup
+
+                sender.execute(sendMessage1)
+
+            }
+
+            LanguageEnum.English -> {
+                sendMessage1.text = CHOOSE_OPTION_EN
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_EN)
+                row.add(SETTING_EN)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage1.replyMarkup = keyboardMarkup
+
+                sender.execute(sendMessage1)
+            }
+
+            LanguageEnum.Russian -> {
+                sendMessage1.text = CHOOSE_OPTION_RU
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(SEND_QUESTION_RU)
+                row.add(SETTING_RU)
+
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendMessage1.replyMarkup = keyboardMarkup
+
+                sender.execute(sendMessage1)
+            }
+
+            else -> {}
+        }
+
     }
 
     private fun temp(sendMessage: SendMessage, language1: LanguageEnum) {
@@ -653,36 +1804,16 @@ class MessageHandlerImpl(
     private fun back(message: Message, sender: AbsSender) {
         val registerUser = registerUser(message.from)
         return when (registerUser.state) {
-            SHARE_CONTACT -> start(message, sender)
-            BEFORE_SEND_QUESTION -> {
-                registerUser.state = CHOOSE_LANGUAGE
-                userRepository.save(registerUser)
-                start(message, sender)
-            }
-
-            else -> start(message, sender)
+            SHARE_CONTACT -> startUser(message, sender)
+//            BEFORE_SEND_QUESTION -> {
+//                registerUser.state = CHOOSE_LANGUAGE
+//                userRepository.save(registerUser)
+//                start(message, sender)
+//            }
+            else -> startUser(message, sender)
         }
     }
 
-//    private fun testVideoGolosFile(message: Message, sender: AbsSender) {
-//        if (message.hasAnimation()) {
-////            val sendAnimation:SendAnimation()
-////            sendAnimation
-//        }else if (message.hasAudio()){
-////            val sendMessage:SendMessage()
-//
-//        }else if (message.hasDocument()){
-//
-//        }else if (message.hasPhoto()){
-//
-//        }else if (message.hasVideo()){
-//
-//        }else if (message.hasVideoNote()){
-//
-//        }else if (message.hasVoice()){
-//
-//        }
-//    }
 
     override fun handle(message: Message, sender: AbsSender) {
         val telegramUser = message.from
@@ -692,61 +1823,67 @@ class MessageHandlerImpl(
         sendMessage.enableHtml(true)
         sendMessage.chatId = chatId
 
+        val registerUser = registerUser(message.from)
         if (message.hasText()) {
-            when (message.text) {
+            val text = message.text
 
-                START -> start(message, sender)
-
-                UZBEK_, RUSSIAN_, ENGLISH_ -> chooseLanguage(message, sender)
-
-                BACK_UZ, BACK_RU, BACK_EN -> back(message, sender)
-
-                SETTING_UZ, SETTING_RU, SETTING_EN -> start(message, sender)
-
-                SEND_QUESTION_UZ, SEND_QUESTION_RU, SEND_QUESTION_EN -> sendQuestion(
+            if (text == START && registerUser.state == STATE_START) startUser(message, sender)
+            else if (text == START && registerUser.state == STATE_OFFLINE) startOperator(message, sender)
+            else if ((text == UZBEK_ || text == RUSSIAN_ || text == ENGLISH_) && registerUser.state == CHOOSE_LANGUAGE) chooseLanguage(
+                message,
+                sender
+            )
+            else if ((text == BACK_UZ || text == BACK_RU || text == BACK_EN)) back(message, sender)
+            else if ((text == SETTING_UZ || text == SETTING_RU || text == SETTING_EN) && registerUser.state == BEFORE_SEND_QUESTION)
+                changeLanguage(message, sender)
+            else if ((text == SEND_QUESTION_UZ || text == SEND_QUESTION_RU || text == SEND_QUESTION_EN) && registerUser.state == BEFORE_SEND_QUESTION)
+                sendQuestion(
                     message,
                     sender
                 )
+            else if ((text == ONLINE_UZ || text == ONLINE_RU) && (registerUser.state == AFTER_START_OPERATOR || registerUser.state == STATE_OFFLINE))
+                getQuestions(message, sender)
+            else if (text == OFFLINE_SESSION && registerUser.state == SEND_ANSWER) closeChat(message, sender)
+            else if (text == OFFLINE && registerUser.state == SEND_ANSWER)
+                offline(message, sender)
 
-                ONLINE_UZ, ONLINE_RU -> getQuestions(message, sender)
+            else {
+                when (registerUser.state) {
+                    SEND_QUESTION -> {
+                        secondQuestion(message, sender)
+                    }
 
-                OFFLINE_SESSION -> closeChat(message, sender)
+                    SEND_ANSWER -> {
+                        sendAnswer(message, sender)
+                    }
 
-                OFFLINE -> offline(message, sender)
+                    CHANGE_LANGUAGE -> {
+                        optionAfterChangedLanguage(message, sender)
+                    }
 
-//                "/video" -> testVideoGolosFile(message, sender)
 
-                "/reply" -> {
-                    sendMessage.chatId = "341330802"
-                    sendMessage.text = "salom"
-                    sendMessage.replyToMessageId = 5764
-                    sender.execute(sendMessage)
-                }
+                    SHARE_CONTACT -> getContact(message, sender)
 
-                else -> {
-                    val registerUser = registerUser(message.from)
-                    when (registerUser.state) {
-                        SEND_QUESTION -> {
-                            secondQuestion(message, sender)
+                    RATE_OPERATOR -> option(message, sender)
+
+
+                    else -> {
+
+                        sendMessage.chatId = registerUser.chatId.toString()
+
+                        when (registerUser.language) {
+                            LanguageEnum.Uzbek -> sendMessage.text = INVALID_COMMAND_UZ
+                            LanguageEnum.English -> sendMessage.text = INVALID_COMMAND_EN
+                            LanguageEnum.Russian -> sendMessage.text = INVALID_COMMAND_RU
+                            null -> sendMessage.text = INVALID_COMMAND_EN
                         }
+                        sender.execute(sendMessage)
 
-                        SEND_ANSWER -> {
-                            sendAnswer(message, sender)
-                        }
-
-                        SHARE_CONTACT -> getContact(message, sender)
-
-                        else -> {
-                            sendMessage.chatId = registerUser.chatId.toString()
-                            sendMessage.text = "botni qayta ishga tushirish uchun /start tugmasini bosing"
-                            sender.execute(sendMessage)
-                        }
                     }
                 }
             }
 
-        } else if (message.hasContact()) {
-            val registerUser = registerUser(message.from)
+        } else if (registerUser.state == SHARE_CONTACT && message.hasContact()) {
 
             if (registerUser.language == null) {
                 sendMessage.chatId = registerUser.chatId.toString()
@@ -755,11 +1892,16 @@ class MessageHandlerImpl(
             } else {
                 getContact(message, sender)
             }
-        } else if ((message.hasVoice() || message.hasVideoNote() || message.hasVideo() || message.hasPhoto() || message.hasDocument() || message.hasAudio() || message.hasAnimation()) && registerUser(
+        } else if ((message.hasContact() || message.hasVoice() || message.hasVideoNote() || message.hasVideo() || message.hasPhoto() || message.hasDocument() || message.hasAudio() || message.hasAnimation() || message.hasSticker()) && registerUser(
                 message.from
             ).state == SEND_QUESTION
         ) {
             secondQuestion(message, sender)
+        } else if ((message.hasContact() || message.hasVoice() || message.hasVideoNote() || message.hasVideo() || message.hasPhoto() || message.hasDocument() || message.hasAudio() || message.hasAnimation() || message.hasSticker()) && registerUser(
+                message.from
+            ).state == SEND_ANSWER
+        ) {
+            sendAnswer(message, sender)
         }
     }
 

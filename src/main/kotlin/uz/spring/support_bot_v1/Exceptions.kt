@@ -1,9 +1,4 @@
 package uz.spring.support_bot_v1
-
-import org.springframework.context.i18n.LocaleContextHolder
-import org.springframework.context.support.ResourceBundleMessageSource
-import java.util.*
-
 sealed class DemoException(message: String? = null): RuntimeException(message) {
     abstract fun errorType(): ErrorCode
     fun getErrorMessage(): BaseMessage{
@@ -27,6 +22,9 @@ class MessageNotFoundException(val id: Long) : DemoException() {
 }
 
 class OperatorNotFoundException(val id: Long) : DemoException(ErrorCode.OPERATOR_NOT_FOUND.name) {
+    override fun errorType() = ErrorCode.OPERATOR_NOT_FOUND
+}
+class SessionNotFoundException(val id: Long) : DemoException(ErrorCode.SESSION_NOT_FOUND.name) {
     override fun errorType() = ErrorCode.OPERATOR_NOT_FOUND
 }
 

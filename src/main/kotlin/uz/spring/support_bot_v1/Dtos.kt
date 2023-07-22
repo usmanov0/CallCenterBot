@@ -1,7 +1,5 @@
 package uz.spring.support_bot_v1
 
-import java.util.*
-
 data class BaseMessage(val code: Int, val message: String?)
 
 data class UserDto(
@@ -12,36 +10,11 @@ data class UserDto(
     val language: String,
     val state: String?
 ) {
-    fun toEntity() =
-        Users(
-            phone,
-            chatId,
-            Role.USER,
-            null,
-            LanguageEnum.valueOf(language),
-            true,
-            state,
-            lastName,
-            firstName
-        )
 
     companion object {
         fun toDto(user: Users): UserDto {
             return user.run { UserDto(firstName, lastName, chatId, phone, language.toString(), state) }
         }
-
-        /* fun registerUser(tgUser: User) = tgUser.run {
-             Users(
-                 firstName,
-                 lastName,
-                 null,
-                 id,
-                 Role.USER,
-                 null,
-                 CHOOSE_LANGUAGE,
-                 null
-             )
-         }*/
     }
 }
 
@@ -51,59 +24,57 @@ data class MessageReplyDto(
     val fileDto: FileResponseDto?
 )
 
-data class UserMessageDto(
-    val body: String,
+data class RequestMessageDto(
     val userChatId: Long,
-    val userLanguage: String
-) {
-    fun toEntity(user: Users, session: Sessions?) =
-        Messages(
-            MessageType.QUESTION,
-            body,
-            false,
-            LanguageEnum.valueOf(userLanguage),
-            user,
-            session,
-            FileType.TEXT
-        )
-}
+    val body: String,
+    val userLanguage: String?,  // null for operator
+    val messageTgId: Long,
+    val repliedMessageTgId: Long?,  // generated id by tg for the replied message
+)
+
+data class ResponseMessageDto(
+    val userChatId: Long,
+    val messageBody: String,
+    val messageId: Long,
+    val repliedMessageTgId: Long?,  // generated id by tg for the replied message
+)
+
 
 data class UserFileDto(
     val fileName: String,
     val caption: String?,
-    val contentType: ContentType,
-    val userChatId: Long,
+    val contentType: String,
+    val chatId: Long,
     val userLanguage: String,
     val content: ByteArray
 ) {
-    fun toEntity(user: Users, session: Sessions?) =
-        Messages(
-            MessageType.QUESTION,
-            fileName,
-            false,
-            LanguageEnum.valueOf(userLanguage),
-            user,
-            session,
-            FileType.FILE
-        )
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as UserFileDto
+
+        if (fileName != other.fileName) return false
+        if (caption != other.caption) return false
+        if (contentType != other.contentType) return false
+        if (chatId != other.chatId) return false
+        if (userLanguage != other.userLanguage) return false
+        if (!content.contentEquals(other.content)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = fileName.hashCode()
+        result = 31 * result + (caption?.hashCode() ?: 0)
+        result = 31 * result + contentType.hashCode()
+        result = 31 * result + chatId.hashCode()
+        result = 31 * result + userLanguage.hashCode()
+        result = 31 * result + content.contentHashCode()
+        return result
+    }
 }
 
-data class OperatorMessageDto(
-    val body: String,
-    val operatorChatId: Long,
-    val replyMessageId: Long?
-) {
-    fun toEntity(operator: Users, session: Sessions, message: Messages) =
-        Messages(
-            MessageType.ANSWER,
-            body,
-            true,
-            message.messageLanguage,
-            operator,
-            session,
-            FileType.TEXT
-        )
-}
 
 data class QuestionsForOperatorDto(
     val messageId: Long,
@@ -119,12 +90,8 @@ data class QuestionsForOperatorDto(
 data class LanguageDto(
     val name: String
 ) {
-    fun toEntity() = Languages(LanguageEnum.valueOf(name))
 }
 
-data class LanguageUpdateDto(
-    val name: String
-)
 
 
 data class GetOneLanguageDto(
@@ -180,7 +147,7 @@ data class OperatorLanguageDto(
 data class FileCreateDto(
     var fileName: String,
     var path: String,
-    var contentType: ContentType,
+    var contentType: String,
     var content: ByteArray
 
 ) {
@@ -205,12 +172,15 @@ data class FileCreateDto(
         return result
     }
 }
-
+data class MarkOperatorDto(
+    val userChatId: Long,
+    val mark: Short?
+)
 data class OperatorFileDto(
     val fileName: String,
     val caption: String?,
-    val contentType: ContentType,
-    val operatorChatId: Long,
+    val chatId: Long,
+    val contentType: String,
     val content: ByteArray?,
 ) {
     override fun equals(other: Any?): Boolean {
@@ -222,8 +192,7 @@ data class OperatorFileDto(
         if (fileName != other.fileName) return false
         if (caption != other.caption) return false
         if (contentType != other.contentType) return false
-        if (operatorChatId != other.operatorChatId) return false
-        if (!content.contentEquals(other.content)) return false
+        if (chatId != other.chatId) return false
 
         return true
     }
@@ -231,8 +200,7 @@ data class OperatorFileDto(
         var result = fileName.hashCode()
         result = 31 * result + (caption?.hashCode() ?: 0)
         result = 31 * result + contentType.hashCode()
-        result = 31 * result + operatorChatId.hashCode()
-        result = 31 * result + content.contentHashCode()
+        result = 31 * result + chatId.hashCode()
         return result
     }
 }
@@ -240,7 +208,7 @@ data class OperatorFileDto(
 data class FileResponseDto(
     var fileName: String,
     var path: String,
-    var contentType: ContentType,
+    var contentType: String,
     var content: ByteArray,
 
 ) {

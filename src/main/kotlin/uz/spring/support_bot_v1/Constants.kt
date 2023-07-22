@@ -5,13 +5,19 @@ const val ADMIN = "689214434"
 
 const val token1 = "6351549076:AAF7uGio6Aan17f4md_yA4fZmj6HjPTbRfg"
 const val username = "https://t.me/firstGroupSupportBot"
-const val basePath = "C:\\Users\\humoy\\IdeaProjects\\kotlin\\support_bot_v1\\files"
+const val basePath = "C:\\files"
 
 const val OPERATOR_CHAT_ID1: Long = 341330802
 const val OPERATOR_CHAT_ID2: Long = 975051915
 
-const val OPERATOR: String = "OPERATOR"
+const val RATE_OPERATOR: String = "RATE_OPERATOR"
 const val USER: String = "USER"
+
+const val ONE = "1"
+const val TWO = "2"
+const val THREE = "3"
+const val FOUR = "4"
+const val FIVE = "5"
 
 const val UZBEK = "Uzbek"
 const val ENGLISH = "English"
@@ -31,6 +37,10 @@ const val SHARE_CONTACT = "SHARE_CONTACT"
 const val SEND_QUESTION = "SEND_QUESTION"
 const val BEFORE_SEND_QUESTION = "BEFORE_SEND_QUESTION"
 const val SEND_ANSWER = "SEND_ANSWER"
+const val CHANGE_LANGUAGE = "CHANGE_LANGUAGE"
+const val STATE_START = "STATE_START"
+const val STATE_OFFLINE = "STATE_OFFLINE"
+const val AFTER_START_OPERATOR = "AFTER_START_OPERATOR"
 
 
 const val SEND_QUESTION_UZ = "Savol yuborish"
@@ -40,6 +50,10 @@ const val SEND_QUESTION_EN = "Send question"
 const val SETTINGS_UZ = "Til tanlang"
 const val SETTINGS_EN = "Choose language"
 const val SETTINGS_RU = "Выберите язык"
+
+const val INVALID_COMMAND_UZ = "Notog'ri buyruq"
+const val INVALID_COMMAND_RU = "Неверная команда"
+const val INVALID_COMMAND_EN = "Invalid command"
 
 const val QUESTION_UZ = "Marhamat savolinggiz yozing !"
 const val QUESTION_RU = "Пожалуйста, напишите свой вопрос!"
@@ -83,6 +97,7 @@ const val ONLINE_RU = "В СЕТИ"
 //const val OFFLINE_SESSION_UZ = "SESSIYANI YOPISH"
 //const val OFFLINE_SESSION_RU = "ЗАКРЫТИЕ СЕССИИ"
 const val OFFLINE_SESSION = "CLOSE SESSION"
+
 //
 //const val OFFLINE_UZ = "YOPISH"
 //const val OFFLINE_RU = "СЕССИИ"

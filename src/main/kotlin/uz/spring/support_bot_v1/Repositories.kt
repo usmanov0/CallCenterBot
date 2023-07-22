@@ -2,7 +2,6 @@ package uz.spring.support_bot_v1
 
 import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
-import org.apache.catalina.User
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
@@ -45,15 +44,10 @@ class BaseRepositoryImpl<T : BaseEntity>(
 
 interface UserRepository : BaseRepository<Users> {
     fun findByChatIdAndDeletedFalse(chatId: Long): Users?
-//    fun findByAccountId(chatId: Long): Users?
 
     fun findAllByRoleAndDeletedFalse(role: Role): List<Users>
 
     fun existsByIdAndDeletedFalse(id: Long): Boolean
-
-    /* @Query(value = "select o from users o inner " +
-             "join OperatorsLanguages ol on o.id = ol.operator.id where " +
-             "o.role = :role and o.isOnline = true and o.operatorState = :state and ol.language.name = :language limit 1")*/
     @Query(
         value = "select o from Users o inner join OperatorsLanguages ol on o.id = ol.operator.id " +
                 "where o.role = :role and o.isOnline = true and o.operatorState = :state and ol.language.name = :language"
@@ -67,16 +61,13 @@ interface UserRepository : BaseRepository<Users> {
 
 interface SessionRepository : BaseRepository<Sessions> {
     fun findByUserChatIdAndActiveTrue(userChatId: Long): Sessions?
-    fun findByOperatorIdAndActiveTrue(operatorId: Long): Sessions?
     fun findByOperatorChatIdAndActiveTrue(operatorChatId: Long): Sessions?
+    fun findByUserChatIdAndRateNull(userChatId: Long): Sessions?
 
 
     @Query(value = "select s from Sessions s where s.chatLanguage = :language and s.operator = null and s.active = true")
     fun getSession(@Param("language") languages: LanguageEnum): List<Sessions>
     fun findByOperatorAndActiveTrue(operator: Users): Sessions?
-
-    // Every session has non-null rate for finished ones, and null rate for active ones
-    fun findByUserChatIdAndRateNull(userChatId: Long): Sessions?
 }
 
 interface MessageRepository : BaseRepository<Messages> {
@@ -85,8 +76,8 @@ interface MessageRepository : BaseRepository<Messages> {
 
     fun findBySessionIdOrderByCreatedDate(sessionId: Long?): List<Messages>
     fun findAllBySessionId(sessionId: Long): List<Messages>
-    fun findByTgMessageId4User(tgMessageId: Long): Messages
-    fun findByTgMessageId4Oper(tgMessageId: Long): Messages
+    fun findByTgMessageId4User(tgMessageId: Long): Messages?
+    fun findByTgMessageId4Oper(tgMessageId: Long): Messages?
 }
 
 interface LanguageRepository : BaseRepository<Languages> {
