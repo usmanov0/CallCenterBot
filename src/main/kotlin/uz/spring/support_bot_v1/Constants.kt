@@ -37,6 +37,10 @@ const val SHARE_CONTACT = "SHARE_CONTACT"
 const val SEND_QUESTION = "SEND_QUESTION"
 const val BEFORE_SEND_QUESTION = "BEFORE_SEND_QUESTION"
 const val SEND_ANSWER = "SEND_ANSWER"
+const val CHANGE_LANGUAGE = "CHANGE_LANGUAGE"
+const val STATE_START = "STATE_START"
+const val STATE_OFFLINE = "STATE_OFFLINE"
+const val AFTER_START_OPERATOR = "AFTER_START_OPERATOR"
 
 
 const val SEND_QUESTION_UZ = "Savol yuborish"
@@ -46,6 +50,10 @@ const val SEND_QUESTION_EN = "Send question"
 const val SETTINGS_UZ = "Til tanlang"
 const val SETTINGS_EN = "Choose language"
 const val SETTINGS_RU = "Выберите язык"
+
+const val INVALID_COMMAND_UZ = "Notog'ri buyruq"
+const val INVALID_COMMAND_RU = "Неверная команда"
+const val INVALID_COMMAND_EN = "Invalid command"
 
 const val QUESTION_UZ = "Marhamat savolinggiz yozing !"
 const val QUESTION_RU = "Пожалуйста, напишите свой вопрос!"
@@ -89,6 +97,7 @@ const val ONLINE_RU = "В СЕТИ"
 //const val OFFLINE_SESSION_UZ = "SESSIYANI YOPISH"
 //const val OFFLINE_SESSION_RU = "ЗАКРЫТИЕ СЕССИИ"
 const val OFFLINE_SESSION = "CLOSE SESSION"
+
 //
 //const val OFFLINE_UZ = "YOPISH"
 //const val OFFLINE_RU = "СЕССИИ"
