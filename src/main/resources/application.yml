@@ -8,9 +8,9 @@ telegram-bot:
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/demo_db
+    url: jdbc:postgresql://localhost:5432/support_bot1
     username: postgres
-    password: root777
+    password: root
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
