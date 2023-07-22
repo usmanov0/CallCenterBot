@@ -32,13 +32,13 @@ interface UserService {
 }
 
 interface MessageService {
-    fun userWriteMsg(dto: UserMessageDto): OperatorMessageDto?
+    fun userWriteMsg(dto: RequestMessageDto): ResponseMessageDto?
     fun userWriteFile(dto: UserFileDto): OperatorFileDto?
-    fun operatorWriteMsg(dto: OperatorMessageDto): UserMessageDto
-    fun operatorWriteFile(dot: UserFileDto): OperatorFileDto?
+    fun operatorWriteMsg(dto: RequestMessageDto): ResponseMessageDto
+    fun operatorWriteFile(dto: UserFileDto): OperatorFileDto?
 
     fun getAllMessagesNotRepliedByLanguage(operatorId: Long): List<QuestionsForOperatorDto>
-
+    fun setTgMessageIdOfMessage(messageId: Long, tgMessageIdGeneratedByBot: Long)
 }
 
 interface FileService {
@@ -194,10 +194,31 @@ class MessageServiceImpl(
     private val fileService: FileService
 ) : MessageService {
     @Transactional
-    override fun userWriteMsg(dto: UserMessageDto): OperatorMessageDto? {
+    override fun userWriteMsg(dto: RequestMessageDto): ResponseMessageDto? {
         userRepository.findByChatIdAndDeletedFalse(dto.userChatId)?.let {
             var sessions: Sessions? = sessionRepository.findByUserChatIdAndActiveTrue(dto.userChatId)
-            var operatorMessageDto: OperatorMessageDto? = null
+
+            var repliedMessage: Messages? = null
+            if (dto.repliedMessageTgId != null)
+                repliedMessage = messageRepository.findByTgMessageId4User(dto.repliedMessageTgId)
+
+            val message =
+                Messages(
+                    MessageType.QUESTION,
+                    dto.body,
+                    dto.messageTgId,
+                    null,
+                    false,
+                    LanguageEnum.valueOf(dto.userLanguage!!),
+                    it,
+                    null,
+                    FileType.TEXT,
+                    repliedMessage
+                )
+            messageRepository.save(message)
+
+            var responseMessageDto: ResponseMessageDto? = null
+
             if (sessions == null) {
                 val newSession = Sessions(it, null, LanguageEnum.valueOf(dto.userLanguage), Date(), null, null, true)
                 val operator = userRepository.getOperator(
@@ -209,16 +230,21 @@ class MessageServiceImpl(
                     operator.operatorState = OperatorState.BUSY
                     userRepository.save(operator)
                     newSession.operator = operator
-                    operatorMessageDto = OperatorMessageDto(dto.body, operator.chatId, null)
+                    responseMessageDto =
+                        ResponseMessageDto(operator.chatId, dto.body, message.id!!, repliedMessage?.tgMessageId4Oper)
                 }
                 sessions = sessionRepository.save(newSession)
             } else if (sessions.operator != null) {
-                operatorMessageDto = OperatorMessageDto(dto.body, sessions.operator!!.chatId, null)
+                responseMessageDto = ResponseMessageDto(
+                    sessions.operator!!.chatId,
+                    dto.body,
+                    message.id!!,
+                    repliedMessage?.tgMessageId4Oper
+                )
             }
-            val message =
-                Messages(MessageType.QUESTION, dto.body, false, LanguageEnum.valueOf(dto.userLanguage), it, sessions,FileType.TEXT)
+            message.session = sessions
             messageRepository.save(message)
-            return operatorMessageDto
+            return responseMessageDto
         } ?: throw UserNotFoundException(dto.userChatId)
     }
 
@@ -240,7 +266,7 @@ class MessageServiceImpl(
             } else if (sessions.operator != null) {
                 operatorFileDto = OperatorFileDto(dto.fileName, dto.caption,sessions.operator!!.chatId, dto.contentType, null)
             }
-            var message = Messages(MessageType.QUESTION, dto.caption, false, LanguageEnum.valueOf(dto.userLanguage), user, sessions, FileType.FILE )
+            var message = Messages(MessageType.QUESTION, dto.caption, null, null, false, LanguageEnum.valueOf(dto.userLanguage), user, sessions, FileType.FILE, null)
             message = messageRepository.save(message)
             fileService.writeFile(FileCreateDto(dto.fileName, basePath, dto.contentType, dto.content), message)
             return operatorFileDto
@@ -248,9 +274,9 @@ class MessageServiceImpl(
     }
 
     override fun operatorWriteFile(dto: UserFileDto): OperatorFileDto? {
-        userRepository.findByChatIdAndDeletedFalse(dto.chatId)?.let {operator ->
+        userRepository.findByChatIdAndDeletedFalse(dto.chatId)?.let { operator ->
             val sessions = sessionRepository.findByOperatorChatIdAndActiveTrue(dto.chatId)
-            val newMessage = Messages(MessageType.ANSWER, dto.caption, false, LanguageEnum.valueOf(dto.userLanguage), sessions!!.user, sessions, FileType.FILE)
+            val newMessage = Messages(MessageType.ANSWER, dto.caption, null, null, false, LanguageEnum.valueOf(dto.userLanguage), sessions!!.user, sessions, FileType.FILE, null)
             val message = messageRepository.save(newMessage)
             fileService.writeFile(FileCreateDto(dto.fileName, basePath, dto.contentType, dto.content), message)
             val operatorFileDto = OperatorFileDto(dto.fileName, dto.caption, sessions.user.chatId,dto.contentType,null)
@@ -259,13 +285,29 @@ class MessageServiceImpl(
     }
 
     @Transactional
-    override fun operatorWriteMsg(dto: OperatorMessageDto): UserMessageDto {
-        userRepository.findByChatIdAndDeletedFalse(dto.operatorChatId)?.let { operator ->
-            val session = sessionRepository.findByOperatorChatIdAndActiveTrue(dto.operatorChatId)
-            val message = Messages(MessageType.ANSWER,dto.body, false, session!!.chatLanguage, session.user, session,FileType.TEXT)
+    override fun operatorWriteMsg(dto: RequestMessageDto): ResponseMessageDto {
+        userRepository.findByChatIdAndDeletedFalse(dto.userChatId)?.let { operator ->
+            var repliedMessage: Messages? = null
+            dto.repliedMessageTgId?.let {
+                repliedMessage = messageRepository.findByTgMessageId4Oper(it)
+            }
+
+            val session = sessionRepository.findByOperatorChatIdAndActiveTrue(dto.userChatId)
+            val message = Messages(
+                MessageType.ANSWER,
+                dto.body,
+                null,
+                dto.messageTgId,
+                false,
+                session!!.chatLanguage,
+                operator/*it was: session.user*/,
+                session,
+                FileType.TEXT,
+                repliedMessage
+            )
             messageRepository.save(message)
-            val userMessageDto = UserMessageDto(dto.body, session.user.chatId, session.chatLanguage.name)
-            return userMessageDto
+
+            return ResponseMessageDto(session.user.chatId, dto.body, message.id!!, repliedMessage?.tgMessageId4User)
         } ?: throw RuntimeException()
     }
 
@@ -281,7 +323,17 @@ class MessageServiceImpl(
         return baseList.map { QuestionsForOperatorDto.toDto(it) }
     }
 
+    override fun setTgMessageIdOfMessage(messageId: Long, tgMessageIdGeneratedByBot: Long) {
+        messageRepository.findByIdAndDeletedFalse(messageId)?.let {
 
+            if (it.tgMessageId4User == null)
+                it.tgMessageId4User = tgMessageIdGeneratedByBot
+            else if (it.tgMessageId4Oper == null)
+                it.tgMessageId4Oper = tgMessageIdGeneratedByBot
+
+            messageRepository.save(it)
+        }
+    }
 }
 
 

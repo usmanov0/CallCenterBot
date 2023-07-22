@@ -1,7 +1,5 @@
 package uz.spring.support_bot_v1
 
-import org.springframework.context.support.ResourceBundleMessageSource
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
