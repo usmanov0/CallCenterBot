@@ -35,7 +35,7 @@ interface MessageService {
     fun userWriteMsg(dto: RequestMessageDto): ResponseMessageDto?
     fun userWriteFile(dto: UserFileDto): OperatorFileDto?
     fun operatorWriteMsg(dto: RequestMessageDto): ResponseMessageDto
-    fun operatorWriteFile(dot: UserFileDto): OperatorFileDto?
+    fun operatorWriteFile(dto: UserFileDto): OperatorFileDto?
 
     fun getAllMessagesNotRepliedByLanguage(operatorId: Long): List<QuestionsForOperatorDto>
     fun setTgMessageIdOfMessage(messageId: Long, tgMessageIdGeneratedByBot: Long)
