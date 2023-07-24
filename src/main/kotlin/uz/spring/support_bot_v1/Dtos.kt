@@ -8,7 +8,7 @@ data class UserDto(
     val chatId: Long,
     val phone: String?,
     val language: String,
-    val state: String?
+    val state: String?,
 ) {
 
     companion object {
@@ -20,8 +20,9 @@ data class UserDto(
 
 
 data class MessageReplyDto(
+    val messageId: Long,
     val body: String?,
-    val fileDto: FileResponseDto?
+    val fileDto: FileResponseDto?,
 )
 
 data class RequestMessageDto(
@@ -37,6 +38,7 @@ data class ResponseMessageDto(
     val messageBody: String,
     val messageId: Long,
     val repliedMessageTgId: Long?,  // generated id by tg for the replied message
+    val isFirst: Boolean = false
 )
 
 
@@ -46,7 +48,9 @@ data class UserFileDto(
     val contentType: String,
     val chatId: Long,
     val userLanguage: String,
-    val content: ByteArray
+    val content: ByteArray,
+    val messageTgId: Long,
+    val repliedMessageTgId: Long?,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -79,7 +83,7 @@ data class UserFileDto(
 data class QuestionsForOperatorDto(
     val messageId: Long,
     val body: String?,
-    val msgLanguage: String
+    val msgLanguage: String,
 ) {
     companion object {
         fun toDto(message: Messages) = message.run { QuestionsForOperatorDto(id!!, body, messageLanguage.name) }
@@ -88,14 +92,13 @@ data class QuestionsForOperatorDto(
 
 
 data class LanguageDto(
-    val name: String
+    val name: String,
 ) {
 }
 
 
-
 data class GetOneLanguageDto(
-    val name: LanguageEnum
+    val name: LanguageEnum,
 ) {
     companion object {
         fun toDto(language: Languages): GetOneLanguageDto {
@@ -116,7 +119,7 @@ data class GetOneOperatorDto(
     var state: String?,
     var isOnline: Boolean?,
     var lastName: String?,
-    var firstName: String
+    var firstName: String,
 ) {
 
     companion object {
@@ -141,16 +144,16 @@ data class GetOneOperatorDto(
 
 data class OperatorLanguageDto(
     val operatorChatId: Long,
-    val languageId: Long
+    val languageId: Long,
 )
 
 data class FileCreateDto(
     var fileName: String,
     var path: String,
     var contentType: String,
-    var content: ByteArray
+    var content: ByteArray,
 
-) {
+    ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -164,6 +167,7 @@ data class FileCreateDto(
 
         return true
     }
+
     override fun hashCode(): Int {
         var result = fileName.hashCode()
         result = 31 * result + path.hashCode()
@@ -172,16 +176,20 @@ data class FileCreateDto(
         return result
     }
 }
+
 data class MarkOperatorDto(
     val userChatId: Long,
-    val mark: Short?
+    val mark: Short?,
 )
+
 data class OperatorFileDto(
     val fileName: String,
     val caption: String?,
     val chatId: Long,
     val contentType: String,
     val content: ByteArray?,
+    val messageId: Long,
+    val repliedMessageTgId: Long?,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -196,6 +204,7 @@ data class OperatorFileDto(
 
         return true
     }
+
     override fun hashCode(): Int {
         var result = fileName.hashCode()
         result = 31 * result + (caption?.hashCode() ?: 0)
@@ -211,7 +220,7 @@ data class FileResponseDto(
     var contentType: String,
     var content: ByteArray,
 
-) {
+    ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

@@ -51,6 +51,18 @@ const val SETTINGS_UZ = "Til tanlang"
 const val SETTINGS_EN = "Choose language"
 const val SETTINGS_RU = "Выберите язык"
 
+const val ONLINE_MESSAGE_UZ = "Ishni boshlash uchun Online tugmasini bosing!"
+const val ONLINE_MESSAGE_RU = "Нажмите кнопку «Онлайн», чтобы начать!"
+const val ONLINE_MESSAGE_EN = "Click the Online button to start working!"
+
+const val NOT_MESSAGES_UZ = "Sizda hozircha habar yoq"
+const val NOT_MESSAGES_RU = "У вас пока нет новостей"
+const val NOT_MESSAGES_EN = "You have no news yet"
+
+const val OFFLINE_UZ = "Ish yakunlandi!"
+const val OFFLINE_RU = "Работа завершена!"
+const val OFFLINE_EN = "The work is completed!"
+
 const val INVALID_COMMAND_UZ = "Notog'ri buyruq"
 const val INVALID_COMMAND_RU = "Неверная команда"
 const val INVALID_COMMAND_EN = "Invalid command"
