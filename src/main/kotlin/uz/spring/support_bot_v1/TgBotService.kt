@@ -366,15 +366,32 @@ class MessageHandlerImpl(
                     "ANIMATION",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendAnimation = SendAnimation(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendAnimation)
+                val execute = sender.execute(sendAnimation)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
         } else if (message.hasContact()) {
@@ -399,7 +416,8 @@ class MessageHandlerImpl(
                 sendContact.chatId = operatorChatId.toString()
                 sendContact.firstName = registerUser.firstName
                 sendContact.phoneNumber = contact.phoneNumber
-                sender.execute(sendContact)
+                val execute = sender.execute(sendContact)
+                messageService.setTgMessageIdOfMessage(userWriteMsg.messageId, execute.messageId.toLong())
             }
 
 
@@ -417,15 +435,31 @@ class MessageHandlerImpl(
                     "AUDIO",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendAudio = SendAudio(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendAudio)
+                val execute = sender.execute(sendAudio)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
 
@@ -443,15 +477,28 @@ class MessageHandlerImpl(
                     "DOCUMENT",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendDocument = SendDocument(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    null,fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendDocument)
+                val execute = sender.execute(sendDocument)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
 
@@ -466,15 +513,28 @@ class MessageHandlerImpl(
                     "PHOTO",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendPhoto = SendPhoto(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    null,
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendPhoto)
+                val execute = sender.execute(sendPhoto)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
         } else if (message.hasVideo()) {
@@ -489,15 +549,33 @@ class MessageHandlerImpl(
                     "VIDEO",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendVideo = SendVideo(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendVideo)
+                val execute = sender.execute(sendVideo)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
         } else if (message.hasVideoNote()) {
@@ -512,15 +590,27 @@ class MessageHandlerImpl(
                     "VIDEO_NOTE",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendVideoNote = SendVideoNote(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    null,
+                    null,
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendVideoNote)
+                val execute = sender.execute(sendVideoNote)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
         } else if (message.hasSticker()) {
@@ -535,15 +625,25 @@ class MessageHandlerImpl(
                     "STICKER",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendSticker = SendSticker(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendSticker)
+                val execute = sender.execute(sendSticker)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
         } else if (message.hasVoice()) {
@@ -558,15 +658,28 @@ class MessageHandlerImpl(
                     "VOICE",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendVoice = SendVoice(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendVoice)
+                val execute = sender.execute(sendVoice)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
         }
@@ -576,6 +689,7 @@ class MessageHandlerImpl(
 
     private fun getQuestions(message: Message, sender: AbsSender) {
         var temp: Boolean = false
+        var messageId: Long? = null
         val sendMessage = SendMessage()
         val registerUser = registerUser(message.from)
         registerUser.state = SEND_ANSWER
@@ -611,8 +725,8 @@ class MessageHandlerImpl(
                             keyboardMarkup.keyboard = keyboard
                             keyboardMarkup.resizeKeyboard = true
                             sendVideo.replyMarkup = keyboardMarkup
-                            sender.execute(sendVideo)
-
+                            val execute = sender.execute(sendVideo)
+                            messageService.setTgMessageIdOfMessage(list[i].messageId, execute.messageId.toLong())
                         }
 
                         "DOCUMENT" -> {
@@ -635,9 +749,8 @@ class MessageHandlerImpl(
                             keyboardMarkup.resizeKeyboard = true
                             sendDocument.replyMarkup = keyboardMarkup
 
-                            sender.execute(sendDocument)
-
-
+                            val execute = sender.execute(sendDocument)
+                            messageService.setTgMessageIdOfMessage(list[i].messageId, execute.messageId.toLong())
                         }
 
                         "ANIMATION" -> {
@@ -660,7 +773,8 @@ class MessageHandlerImpl(
                             keyboardMarkup.resizeKeyboard = true
                             sendAnimation.replyMarkup = keyboardMarkup
 
-                            sender.execute(sendAnimation)
+                            val execute = sender.execute(sendAnimation)
+                            messageService.setTgMessageIdOfMessage(list[i].messageId, execute.messageId.toLong())
                         }
 
                         "VOICE" -> {
@@ -683,9 +797,8 @@ class MessageHandlerImpl(
                             keyboardMarkup.resizeKeyboard = true
                             sendVoice.replyMarkup = keyboardMarkup
 
-                            sender.execute(sendVoice)
-
-
+                            val execute = sender.execute(sendVoice)
+                            messageService.setTgMessageIdOfMessage(list[i].messageId, execute.messageId.toLong())
                         }
 
                         "STICKER" -> {
@@ -708,9 +821,8 @@ class MessageHandlerImpl(
                             keyboardMarkup.resizeKeyboard = true
                             sendSticker.replyMarkup = keyboardMarkup
 
-                            sender.execute(sendSticker)
-
-
+                            val execute = sender.execute(sendSticker)
+                            messageService.setTgMessageIdOfMessage(list[i].messageId, execute.messageId.toLong())
                         }
 
                         "VIDEO_NOTE" -> {
@@ -732,8 +844,8 @@ class MessageHandlerImpl(
                             keyboardMarkup.keyboard = keyboard
                             keyboardMarkup.resizeKeyboard = true
                             sendVideoNote.replyMarkup = keyboardMarkup
-                            sender.execute(sendVideoNote)
-
+                            val execute = sender.execute(sendVideoNote)
+                            messageService.setTgMessageIdOfMessage(list[i].messageId, execute.messageId.toLong())
                         }
 
                         "AUDIO" -> {
@@ -755,9 +867,8 @@ class MessageHandlerImpl(
                             keyboardMarkup.resizeKeyboard = true
                             sendAudio.replyMarkup = keyboardMarkup
 
-                            sender.execute(sendAudio)
-
-
+                            val execute = sender.execute(sendAudio)
+                            messageService.setTgMessageIdOfMessage(list[i].messageId, execute.messageId.toLong())
                         }
 
                         "PHOTO" -> {
@@ -780,7 +891,8 @@ class MessageHandlerImpl(
                             keyboardMarkup.resizeKeyboard = true
                             sendPhoto.replyMarkup = keyboardMarkup
 
-                            sender.execute(sendPhoto)
+                            val execute = sender.execute(sendPhoto)
+                            messageService.setTgMessageIdOfMessage(list[i].messageId, execute.messageId.toLong())
                         }
                     }
                 } else {
@@ -797,7 +909,8 @@ class MessageHandlerImpl(
                     keyboardMarkup.keyboard = keyboard
                     keyboardMarkup.resizeKeyboard = true
                     sendMessage.replyMarkup = keyboardMarkup
-                    sender.execute(sendMessage)
+                    val execute = sender.execute(sendMessage)
+                    messageService.setTgMessageIdOfMessage(list[i].messageId, execute.messageId.toLong())
                 }
             }
             val item = list[list.size - 1].fileDto
@@ -822,8 +935,8 @@ class MessageHandlerImpl(
                         keyboardMarkup.resizeKeyboard = true
                         sendVideo.replyMarkup = keyboardMarkup
 
-                        sender.execute(sendVideo)
-
+                        val execute = sender.execute(sendVideo)
+                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
                     }
 
                     "DOCUMENT" -> {
@@ -846,9 +959,8 @@ class MessageHandlerImpl(
                         keyboardMarkup.resizeKeyboard = true
                         sendDocument.replyMarkup = keyboardMarkup
 
-                        sender.execute(sendDocument)
-
-
+                        val execute = sender.execute(sendDocument)
+                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
                     }
 
                     "ANIMATION" -> {
@@ -871,7 +983,8 @@ class MessageHandlerImpl(
                         keyboardMarkup.resizeKeyboard = true
                         sendAnimation.replyMarkup = keyboardMarkup
 
-                        sender.execute(sendAnimation)
+                        val execute = sender.execute(sendAnimation)
+                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
                     }
 
                     "VOICE" -> {
@@ -894,9 +1007,8 @@ class MessageHandlerImpl(
                         keyboardMarkup.resizeKeyboard = true
                         sendVoice.replyMarkup = keyboardMarkup
 
-                        sender.execute(sendVoice)
-
-
+                        val execute = sender.execute(sendVoice)
+                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
                     }
 
                     "STICKER" -> {
@@ -919,9 +1031,8 @@ class MessageHandlerImpl(
                         keyboardMarkup.resizeKeyboard = true
                         sendSticker.replyMarkup = keyboardMarkup
 
-                        sender.execute(sendSticker)
-
-
+                        val execute = sender.execute(sendSticker)
+                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
                     }
 
                     "VIDEO_NOTE" -> {
@@ -944,9 +1055,8 @@ class MessageHandlerImpl(
                         keyboardMarkup.resizeKeyboard = true
                         sendVideoNote.replyMarkup = keyboardMarkup
 
-                        sender.execute(sendVideoNote)
-
-
+                        val execute = sender.execute(sendVideoNote)
+                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
                     }
 
                     "AUDIO" -> {
@@ -969,9 +1079,8 @@ class MessageHandlerImpl(
                         keyboardMarkup.resizeKeyboard = true
                         sendAudio.replyMarkup = keyboardMarkup
 
-                        sender.execute(sendAudio)
-
-
+                        val execute = sender.execute(sendAudio)
+                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
                     }
 
                     "PHOTO" -> {
@@ -994,7 +1103,8 @@ class MessageHandlerImpl(
                         keyboardMarkup.resizeKeyboard = true
                         sendPhoto.replyMarkup = keyboardMarkup
 
-                        sender.execute(sendPhoto)
+                        val execute = sender.execute(sendPhoto)
+                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
                     }
                 }
             } else {
@@ -1010,7 +1120,8 @@ class MessageHandlerImpl(
                 keyboardMarkup.keyboard = keyboard
                 keyboardMarkup.resizeKeyboard = true
                 sendMessage.replyMarkup = keyboardMarkup
-                sender.execute(sendMessage)
+                val execute = sender.execute(sendMessage)
+                messageService.setTgMessageIdOfMessage(messageId!!, execute.messageId.toLong())
             }
         }
         if (!temp) {
@@ -1191,15 +1302,32 @@ class MessageHandlerImpl(
                     "ANIMATION",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendAnimation = SendAnimation(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendAnimation)
+                val execute = sender.execute(sendAnimation)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
 
@@ -1215,15 +1343,31 @@ class MessageHandlerImpl(
                     "MUSIC",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendAudio = SendAudio(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendAudio)
+                val execute = sender.execute(sendAudio)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
 
@@ -1239,15 +1383,28 @@ class MessageHandlerImpl(
                     "DOCUMENT",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendDocument = SendDocument(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    null,fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendDocument)
+                val execute = sender.execute(sendDocument)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
 
@@ -1263,15 +1420,28 @@ class MessageHandlerImpl(
                     "PHOTO",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendPhoto = SendPhoto(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    null,
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendPhoto)
+                val execute = sender.execute(sendPhoto)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
         } else if (message.hasVideo()) {
@@ -1286,15 +1456,33 @@ class MessageHandlerImpl(
                     "VIDEO",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendVideo = SendVideo(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendVideo)
+                val execute = sender.execute(sendVideo)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
         } else if (message.hasVideoNote()) {
@@ -1309,15 +1497,27 @@ class MessageHandlerImpl(
                     "VIDEO_NOTE",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendVideoNote = SendVideoNote(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    null,
+                    null,
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendVideoNote)
+                val execute = sender.execute(sendVideoNote)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
         } else if (message.hasSticker()) {
@@ -1332,15 +1532,25 @@ class MessageHandlerImpl(
                     "STICKER",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendSticker = SendSticker(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendSticker)
+                val execute = sender.execute(sendSticker)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
         } else if (message.hasVoice()) {
@@ -1355,15 +1565,28 @@ class MessageHandlerImpl(
                     "VOICE",
                     registerUser.chatId,
                     registerUser.language!!.name,
-                    content
+                    content,
+                    message.messageId.toLong(),
+                    message.replyToMessage?.messageId?.toLong()
                 )
             )
             if (fileDto != null) {
                 val sendVoice = SendVoice(
                     fileDto.chatId.toString(),
-                    InputFile(File(basePath + "\\" + fileDto.fileName))
+                    null,
+                    InputFile(File(basePath + "\\" + fileDto.fileName)),
+                    null,
+                    fileDto.repliedMessageTgId?.toInt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
                 )
-                sender.execute(sendVoice)
+                val execute = sender.execute(sendVoice)
+                messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
         }
