@@ -4,16 +4,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.getForObject
 import org.telegram.telegrambots.meta.api.methods.GetFile
-import org.telegram.telegrambots.meta.api.methods.send.SendAnimation
-import org.telegram.telegrambots.meta.api.methods.send.SendAudio
-import org.telegram.telegrambots.meta.api.methods.send.SendContact
-import org.telegram.telegrambots.meta.api.methods.send.SendDocument
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
-import org.telegram.telegrambots.meta.api.methods.send.SendSticker
-import org.telegram.telegrambots.meta.api.methods.send.SendVideo
-import org.telegram.telegrambots.meta.api.methods.send.SendVideoNote
-import org.telegram.telegrambots.meta.api.methods.send.SendVoice
+import org.telegram.telegrambots.meta.api.methods.send.*
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.InputFile
 import org.telegram.telegrambots.meta.api.objects.Message
@@ -38,7 +29,8 @@ class MessageHandlerImpl(
     private val userRepository: UserRepository,
     private val userService: UserService,
     private val messageService: MessageService,
-    private val sessionRepository: SessionRepository
+    private val sessionRepository: SessionRepository,
+    private val operatorsLanguagesRepository: OperatorsLanguagesRepository,
 ) : MessageHandler {
 
     private fun registerUser(tgUser: User): Users {
@@ -131,9 +123,19 @@ class MessageHandlerImpl(
         val sendMessage = SendMessage()
         val registerUser = registerUser(message.from)
         registerUser.state = AFTER_START_OPERATOR
-        userRepository.save(registerUser)
         sendMessage.chatId = message.chatId.toString()
-        sendMessage.text = "Ishni boshlash uchun Online tugmasini bosing !"
+
+        val languages = operatorsLanguagesRepository.findAllByOperatorChatId(message.from.id)
+
+        when (languages[0].name) {
+            LanguageEnum.Uzbek -> sendMessage.text = ONLINE_MESSAGE_UZ
+            LanguageEnum.English -> sendMessage.text = ONLINE_MESSAGE_EN
+            LanguageEnum.Russian -> sendMessage.text = ONLINE_MESSAGE_RU
+        }
+
+        registerUser.language = languages[0].name
+        userRepository.save(registerUser)
+
 
         val keyboardMarkup = ReplyKeyboardMarkup()
         val keyboard: MutableList<KeyboardRow> = ArrayList()
@@ -301,9 +303,30 @@ class MessageHandlerImpl(
                         )
                     )
                     if (userWriteMsg != null) {
+
+                        if (userWriteMsg.isFirst){
+                            val sendMessage1 = SendMessage()
+                            sendMessage1.chatId = userWriteMsg.userChatId.toString()
+                            sendMessage1.text = "${message.from.firstName} siz bilan bog'landi"
+                            sender.execute(sendMessage1)
+                        }
                         val operatorChatId = userWriteMsg.userChatId
                         sendMessage.chatId = operatorChatId.toString()
                         sendMessage.text = userWriteMsg.messageBody
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendMessage.replyMarkup = keyboardMarkup
+
                         sendMessage.replyToMessageId = userWriteMsg.repliedMessageTgId?.toInt()
                         val execute = sender.execute(sendMessage)
                         messageService.setTgMessageIdOfMessage(userWriteMsg.messageId, execute.messageId.toLong())
@@ -321,9 +344,32 @@ class MessageHandlerImpl(
                         )
                     )
                     if (userWriteMsg != null) {
+
+                        if (userWriteMsg.isFirst){
+                            val sendMessage1 = SendMessage()
+                            sendMessage1.chatId = userWriteMsg.userChatId.toString()
+                            sendMessage1.text = "${message.from.firstName} связался с вами"
+                            sender.execute(sendMessage1)
+                        }
+
                         val operatorChatId = userWriteMsg.userChatId
                         sendMessage.chatId = operatorChatId.toString()
                         sendMessage.text = userWriteMsg.messageBody
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendMessage.replyMarkup = keyboardMarkup
+
+
                         sendMessage.replyToMessageId = userWriteMsg.repliedMessageTgId?.toInt()
                         val execute = sender.execute(sendMessage)
                         messageService.setTgMessageIdOfMessage(userWriteMsg.messageId, execute.messageId.toLong())
@@ -341,9 +387,30 @@ class MessageHandlerImpl(
                         )
                     )
                     if (userWriteMsg != null) {
+
+                        if (userWriteMsg.isFirst){
+                            val sendMessage1 = SendMessage()
+                            sendMessage1.chatId = userWriteMsg.userChatId.toString()
+                            sendMessage1.text = "${message.from.firstName} contacted you"
+                            sender.execute(sendMessage1)
+                        }
                         val operatorChatId = userWriteMsg.userChatId
                         sendMessage.chatId = operatorChatId.toString()
                         sendMessage.text = userWriteMsg.messageBody
+
+                        val keyboardMarkup = ReplyKeyboardMarkup()
+                        val keyboard: MutableList<KeyboardRow> = ArrayList()
+                        val row = KeyboardRow()
+                        val row1 = KeyboardRow()
+
+                        row.add(OFFLINE_SESSION)
+                        row1.add(OFFLINE)
+                        keyboard.add(row)
+                        keyboard.add(row1)
+                        keyboardMarkup.keyboard = keyboard
+                        keyboardMarkup.resizeKeyboard = true
+                        sendMessage.replyMarkup = keyboardMarkup
+
                         sendMessage.replyToMessageId = userWriteMsg.repliedMessageTgId?.toInt()
                         val execute = sender.execute(sendMessage)
                         messageService.setTgMessageIdOfMessage(userWriteMsg.messageId, execute.messageId.toLong())
@@ -390,19 +457,30 @@ class MessageHandlerImpl(
                     null,
                     null,
                 )
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(OFFLINE_SESSION)
+                row1.add(OFFLINE)
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendAnimation.replyMarkup = keyboardMarkup
+
+
                 val execute = sender.execute(sendAnimation)
                 messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
-        } else if (message.hasContact()) {
+        }
+        else if (message.hasContact()) {
             val contact = message.contact
             val sendContact = SendContact()
             val userWriteMsg = messageService.userWriteMsg(
-//                UserMessageDto(
-//                    contact.phoneNumber,
-//                    registerUser.chatId,
-//                    registerUser.language!!.name
-//                )
                 RequestMessageDto(
                     registerUser.chatId,
                     message.contact.phoneNumber,
@@ -416,6 +494,20 @@ class MessageHandlerImpl(
                 sendContact.chatId = operatorChatId.toString()
                 sendContact.firstName = registerUser.firstName
                 sendContact.phoneNumber = contact.phoneNumber
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(OFFLINE_SESSION)
+                row1.add(OFFLINE)
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendContact.replyMarkup = keyboardMarkup
+
                 val execute = sender.execute(sendContact)
                 messageService.setTgMessageIdOfMessage(userWriteMsg.messageId, execute.messageId.toLong())
             }
@@ -458,6 +550,20 @@ class MessageHandlerImpl(
                     null,
                     null,
                 )
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(OFFLINE_SESSION)
+                row1.add(OFFLINE)
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendAudio.replyMarkup = keyboardMarkup
+
                 val execute = sender.execute(sendAudio)
                 messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
@@ -488,7 +594,7 @@ class MessageHandlerImpl(
                     null,
                     InputFile(File(basePath + "\\" + fileDto.fileName)),
                     null,
-                    null,fileDto.repliedMessageTgId?.toInt(),
+                    null, fileDto.repliedMessageTgId?.toInt(),
                     null,
                     null,
                     null,
@@ -497,6 +603,20 @@ class MessageHandlerImpl(
                     null,
                     null,
                 )
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(OFFLINE_SESSION)
+                row1.add(OFFLINE)
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendDocument.replyMarkup = keyboardMarkup
+
                 val execute = sender.execute(sendDocument)
                 messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
@@ -533,6 +653,20 @@ class MessageHandlerImpl(
                     null,
                     null,
                 )
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(OFFLINE_SESSION)
+                row1.add(OFFLINE)
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendPhoto.replyMarkup = keyboardMarkup
+
                 val execute = sender.execute(sendPhoto)
                 messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
@@ -574,6 +708,20 @@ class MessageHandlerImpl(
                     null,
                     null,
                 )
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(OFFLINE_SESSION)
+                row1.add(OFFLINE)
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendVideo.replyMarkup = keyboardMarkup
+
                 val execute = sender.execute(sendVideo)
                 messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
@@ -609,6 +757,20 @@ class MessageHandlerImpl(
                     null,
                     null,
                 )
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(OFFLINE_SESSION)
+                row1.add(OFFLINE)
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendVideoNote.replyMarkup = keyboardMarkup
+
                 val execute = sender.execute(sendVideoNote)
                 messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
@@ -642,6 +804,20 @@ class MessageHandlerImpl(
                     null,
                     null,
                 )
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(OFFLINE_SESSION)
+                row1.add(OFFLINE)
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendSticker.replyMarkup = keyboardMarkup
+
                 val execute = sender.execute(sendSticker)
                 messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
@@ -678,18 +854,30 @@ class MessageHandlerImpl(
                     null,
                     null,
                 )
+
+                val keyboardMarkup = ReplyKeyboardMarkup()
+                val keyboard: MutableList<KeyboardRow> = ArrayList()
+                val row = KeyboardRow()
+                val row1 = KeyboardRow()
+
+                row.add(OFFLINE_SESSION)
+                row1.add(OFFLINE)
+                keyboard.add(row)
+                keyboard.add(row1)
+                keyboardMarkup.keyboard = keyboard
+                keyboardMarkup.resizeKeyboard = true
+                sendVoice.replyMarkup = keyboardMarkup
+
                 val execute = sender.execute(sendVoice)
                 messageService.setTgMessageIdOfMessage(fileDto.messageId, execute.messageId.toLong())
             }
 
         }
 
-
     }
 
     private fun getQuestions(message: Message, sender: AbsSender) {
         var temp: Boolean = false
-        var messageId: Long? = null
         val sendMessage = SendMessage()
         val registerUser = registerUser(message.from)
         registerUser.state = SEND_ANSWER
@@ -701,6 +889,15 @@ class MessageHandlerImpl(
         val list = userService.onlineOperator(operatorChatId)
 
         if (list != null) {
+            val firstName = messageService.getUserByMessageId(list[0].messageId)
+            when (registerUser.language) {
+                LanguageEnum.Uzbek -> sendMessage.text = "${firstName} siz bilan bog'landi "
+                LanguageEnum.English -> sendMessage.text = "${firstName} contacted you "
+                LanguageEnum.Russian -> sendMessage.text = "${firstName} связался с вами "
+                null -> sendMessage.text = "${firstName} siz bilan bog'landi "
+            }
+            sender.execute(sendMessage)
+
             temp = true
             for (i in 0..list.size - 2) {
                 val item = list[i].fileDto
@@ -936,7 +1133,10 @@ class MessageHandlerImpl(
                         sendVideo.replyMarkup = keyboardMarkup
 
                         val execute = sender.execute(sendVideo)
-                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
+                        messageService.setTgMessageIdOfMessage(
+                            list[list.size - 1].messageId,
+                            execute.messageId.toLong()
+                        )
                     }
 
                     "DOCUMENT" -> {
@@ -960,7 +1160,10 @@ class MessageHandlerImpl(
                         sendDocument.replyMarkup = keyboardMarkup
 
                         val execute = sender.execute(sendDocument)
-                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
+                        messageService.setTgMessageIdOfMessage(
+                            list[list.size - 1].messageId,
+                            execute.messageId.toLong()
+                        )
                     }
 
                     "ANIMATION" -> {
@@ -984,7 +1187,10 @@ class MessageHandlerImpl(
                         sendAnimation.replyMarkup = keyboardMarkup
 
                         val execute = sender.execute(sendAnimation)
-                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
+                        messageService.setTgMessageIdOfMessage(
+                            list[list.size - 1].messageId,
+                            execute.messageId.toLong()
+                        )
                     }
 
                     "VOICE" -> {
@@ -1008,7 +1214,10 @@ class MessageHandlerImpl(
                         sendVoice.replyMarkup = keyboardMarkup
 
                         val execute = sender.execute(sendVoice)
-                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
+                        messageService.setTgMessageIdOfMessage(
+                            list[list.size - 1].messageId,
+                            execute.messageId.toLong()
+                        )
                     }
 
                     "STICKER" -> {
@@ -1032,7 +1241,10 @@ class MessageHandlerImpl(
                         sendSticker.replyMarkup = keyboardMarkup
 
                         val execute = sender.execute(sendSticker)
-                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
+                        messageService.setTgMessageIdOfMessage(
+                            list[list.size - 1].messageId,
+                            execute.messageId.toLong()
+                        )
                     }
 
                     "VIDEO_NOTE" -> {
@@ -1056,7 +1268,10 @@ class MessageHandlerImpl(
                         sendVideoNote.replyMarkup = keyboardMarkup
 
                         val execute = sender.execute(sendVideoNote)
-                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
+                        messageService.setTgMessageIdOfMessage(
+                            list[list.size - 1].messageId,
+                            execute.messageId.toLong()
+                        )
                     }
 
                     "AUDIO" -> {
@@ -1080,7 +1295,10 @@ class MessageHandlerImpl(
                         sendAudio.replyMarkup = keyboardMarkup
 
                         val execute = sender.execute(sendAudio)
-                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
+                        messageService.setTgMessageIdOfMessage(
+                            list[list.size - 1].messageId,
+                            execute.messageId.toLong()
+                        )
                     }
 
                     "PHOTO" -> {
@@ -1104,7 +1322,10 @@ class MessageHandlerImpl(
                         sendPhoto.replyMarkup = keyboardMarkup
 
                         val execute = sender.execute(sendPhoto)
-                        messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
+                        messageService.setTgMessageIdOfMessage(
+                            list[list.size - 1].messageId,
+                            execute.messageId.toLong()
+                        )
                     }
                 }
             } else {
@@ -1121,14 +1342,23 @@ class MessageHandlerImpl(
                 keyboardMarkup.resizeKeyboard = true
                 sendMessage.replyMarkup = keyboardMarkup
                 val execute = sender.execute(sendMessage)
-                messageService.setTgMessageIdOfMessage(messageId!!, execute.messageId.toLong())
+                messageService.setTgMessageIdOfMessage(list[list.size - 1].messageId, execute.messageId.toLong())
             }
         }
         if (!temp) {
             val keyboardMarkup = ReplyKeyboardMarkup()
             val keyboard: MutableList<KeyboardRow> = ArrayList()
             val row1 = KeyboardRow()
-            sendMessage.text = "Sizda hozircha habar yoq"
+
+            val languages = operatorsLanguagesRepository.findAllByOperatorChatId(message.from.id)
+            when (languages[0].name) {
+                LanguageEnum.Uzbek -> sendMessage.text = NOT_MESSAGES_UZ
+
+                LanguageEnum.English -> sendMessage.text = NOT_MESSAGES_EN
+
+                LanguageEnum.Russian -> sendMessage.text = NOT_MESSAGES_RU
+            }
+
             row1.add(OFFLINE)
             keyboard.add(row1)
             keyboardMarkup.keyboard = keyboard
@@ -1137,7 +1367,6 @@ class MessageHandlerImpl(
             sender.execute(sendMessage)
         }
     }
-
 
     private fun closeChat(message: Message, sender: AbsSender) {
         var temp: Boolean = false
@@ -1394,7 +1623,7 @@ class MessageHandlerImpl(
                     null,
                     InputFile(File(basePath + "\\" + fileDto.fileName)),
                     null,
-                    null,fileDto.repliedMessageTgId?.toInt(),
+                    null, fileDto.repliedMessageTgId?.toInt(),
                     null,
                     null,
                     null,
@@ -1679,9 +1908,14 @@ class MessageHandlerImpl(
             }
         }
 
-
         userService.offlineOperator(operatorChatId)
-        sendMessage.text = "Ish yakunlandi !"
+
+        val languages = operatorsLanguagesRepository.findAllByOperatorChatId(message.from.id)
+        when (languages[0].name) {
+            LanguageEnum.Uzbek -> sendMessage.text = OFFLINE_UZ
+            LanguageEnum.English -> sendMessage.text = OFFLINE_EN
+            LanguageEnum.Russian -> sendMessage.text = OFFLINE_RU
+        }
 
         val keyboardMarkup = ReplyKeyboardMarkup()
         val keyboard: MutableList<KeyboardRow> = ArrayList()
@@ -1730,15 +1964,15 @@ class MessageHandlerImpl(
 
                 when (registerUser.language) {
                     LanguageEnum.Uzbek -> sendMessage.text = "Iltimos contact yuboring"
-                    LanguageEnum.English
+                    LanguageEnum.English,
 
                     -> sendMessage.text = "Please send contact!"
 
-                    LanguageEnum.Russian
+                    LanguageEnum.Russian,
 
                     -> sendMessage.text = "Пожалуйста, пришлите контакт!"
 
-                    null
+                    null,
 
                     -> sendMessage.text = "Please send contact!"
                 }

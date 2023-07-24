@@ -48,6 +48,7 @@ interface UserRepository : BaseRepository<Users> {
     fun findAllByRoleAndDeletedFalse(role: Role): List<Users>
 
     fun existsByIdAndDeletedFalse(id: Long): Boolean
+
     @Query(
         value = "select o from Users o inner join OperatorsLanguages ol on o.id = ol.operator.id " +
                 "where o.role = :role and o.isOnline = true and o.operatorState = :state and ol.language.name = :language"
@@ -55,8 +56,8 @@ interface UserRepository : BaseRepository<Users> {
     fun getOperator(
         @Param("role") role: Role,
         @Param("state") state: OperatorState,
-        @Param("language") languages: LanguageEnum
-    ): Users?
+        @Param("language") languages: LanguageEnum,
+    ): MutableList<Users>
 }
 
 interface SessionRepository : BaseRepository<Sessions> {
@@ -78,6 +79,8 @@ interface MessageRepository : BaseRepository<Messages> {
     fun findAllBySessionId(sessionId: Long): List<Messages>
     fun findByTgMessageId4User(tgMessageId: Long): Messages?
     fun findByTgMessageId4Oper(tgMessageId: Long): Messages?
+    @Query(value = "select m.user from Messages m where m.id = ?1")
+    fun getUserByMessageId(messageId: Long): Users
 }
 
 interface LanguageRepository : BaseRepository<Languages> {
@@ -90,6 +93,12 @@ interface OperatorsLanguagesRepository : BaseRepository<OperatorsLanguages> {
                 "where ol.operator.id=?1"
     )
     fun getAllLanguagesByOperatorId(operatorId: Long): List<Languages>
+
+    @Query(
+        value = "select l from Languages as l join OperatorsLanguages as op on l.id=op.language.id " +
+                "where op.operator.chatId=?1"
+    )
+    fun findAllByOperatorChatId(operatorChatId: Long): List<Languages>
 }
 
 interface FileRepository : BaseRepository<FileEntity> {
