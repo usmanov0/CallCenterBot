@@ -20,6 +20,7 @@ data class UserDto(
 
 
 data class MessageReplyDto(
+    val messageId: Long,
     val body: String?,
     val fileDto: FileResponseDto?
 )
@@ -46,7 +47,9 @@ data class UserFileDto(
     val contentType: String,
     val chatId: Long,
     val userLanguage: String,
-    val content: ByteArray
+    val content: ByteArray,
+    val messageTgId: Long,
+    val repliedMessageTgId: Long?
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -182,6 +185,8 @@ data class OperatorFileDto(
     val chatId: Long,
     val contentType: String,
     val content: ByteArray?,
+    val messageId: Long,
+    val repliedMessageTgId: Long?
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
