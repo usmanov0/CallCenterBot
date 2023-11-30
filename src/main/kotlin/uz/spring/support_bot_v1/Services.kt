@@ -13,7 +13,6 @@ import java.util.Date
 interface UserService {
     fun findById(id: Long): UserDto
     fun getAll(pageable: Pageable): Page<UserDto>
-
     fun addOperator(chatId: Long)
 
     fun getOperatorsByChatId(chatId: Long): GetOneOperatorDto
